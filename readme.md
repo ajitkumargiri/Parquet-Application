@@ -136,7 +136,7 @@ Invest time in learning and improving your coding skills.
 
 Workflow: How It Operates
 
-Presently, all events are being published to the legacy Kafka system. However, our innovative application introduces a transformative approach. It adeptly reads all incoming new or updated messages from the existing Kafka platform. Subsequently, these messages undergo a comprehensive transformation process, which involves converting them into a novel party model. This refined representation enhances data integrity and accuracy.
+Presently, all events are being published to the legacy Kafka system. However, our innovative application introduces a transformative approach. It adeptly reads all incoming new or updated messages from the existing Kafka platform. Subsequently, these messages undergo a comprehensive transformation process, which involves converting them into a novel new model. This refined representation enhances data integrity and accuracy.
 
 Following this meticulous transformation, the application proceeds to dispatch these enhanced messages to a freshly established Kafka topic within the Azure ecosystem. This transition to Azure is not only a technological evolution but also a strategic enhancement, leveraging Azure's advanced capabilities for seamless data management and scalability.
 
@@ -146,4 +146,4 @@ This transition from the old Kafka system to the new Azure-based architecture is
 
 Moreover, the migration to Azure lays the foundation for future innovations. The scalability and flexibility inherent to Azure's architecture position our application for growth, enabling it to seamlessly adapt to evolving data demands and expanding user requirements. This scalability, coupled with the refined data model, opens doors to more sophisticated data analytics, real-time insights, and enhanced decision-making capabilities.
 
-In conclusion, the workings of our new application represent a paradigm shift from the old Kafka-centric approach. By orchestrating the journey of data from the legacy Kafka system to a transformed party model within Azure's dynamic ecosystem, we unlock a realm of possibilities. These encompass refined data quality, streamlined downstream consumption, and the potential for groundbreaking advancements in data utilization and analysis.
+In conclusion, the workings of our new application represent a paradigm shift from the old Kafka-centric approach. By orchestrating the journey of data from the legacy Kafka system to a transformed newp model within Azure's dynamic ecosystem, we unlock a realm of possibilities. These encompass refined data quality, streamlined downstream consumption, and the potential for groundbreaking advancements in data utilization and analysis.
