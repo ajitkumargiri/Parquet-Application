@@ -187,3 +187,65 @@ end
 subgraph Java Application
     H -->|Spring Batch| JavaApp
 end
+
+
+
+
+
+Certainly, here's a concise description of the process with filenames and technical details in bullet points:
+
+Load employee data from Azure Storage:
+
+Input files: employee_data_1.txt, employee_data_2.txt, ...
+Preprocess data:
+
+Clean and validate records for consistency.
+Prepare data for transformation.
+Transform and join data in Azure Databricks:
+
+Utilize distributed processing for efficiency.
+Load employee data into DataFrames.
+Join core and address data based on empno.
+Serialize to JSON/AVRO format:
+
+Serialize unified employee dataset.
+Output JSON/AVRO files: unified_employee_data.json, unified_employee_data.avro.
+Custom sort: Non-Managers First:
+
+Implement custom sorting logic.
+Output sorted files: sorted_employee_data.json, sorted_employee_data.avro.
+Chunk and store data:
+
+Chunk size: 250,000 records per file.
+Chunked files: employee_chunk_001.json, employee_chunk_002.json, ...
+Azure Storage integration:
+
+Input: employee_data_*.txt and employee_data_*.json from Azure Storage.
+Output: Store chunked and sorted files in Azure Storage.
+Output file organization:
+
+Output folder structure: output_data/YYYY-MM-DD/.
+Subfolders by date: output_data/2023-08-17/, output_data/2023-08-18/.
+Java Application (Azure VM, Spring Batch):
+
+Process chunked files: employee_chunk_*.json.
+Spring Batch jobs: EmployeeProcessingJob.
+Testing and optimization:
+
+Conduct comprehensive testing for each processing step.
+Optimize Azure Databricks cluster settings for performance.
+Error handling and recovery:
+
+Implement error handling mechanisms.
+Retry failed chunks during processing.
+Documentation and maintenance:
+
+Create detailed documentation for future reference.
+Include data flow diagrams and configuration details.
+Please adjust these details to fit your specific project requirements and naming conventions.
+
+
+
+
+
+
