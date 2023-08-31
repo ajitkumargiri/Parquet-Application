@@ -323,7 +323,77 @@ By following these steps, you'll be able to efficiently read, join, sort, and st
 
 
 
+=========================================================
 
+User Story 1: Create Azure Pipeline Using Bicep Template
+
+Acceptance Criteria:
+
+A Bicep template is created, defining infrastructure resources required for the Spring Boot API.
+The template includes resource definitions for Azure App Service and Azure Cache for Redis (if used).
+Azure Pipeline YAML is defined and committed to the repository.
+The pipeline is configured to trigger on new code commits.
+Definition of Done:
+
+Bicep template is reviewed and approved by the team.
+Azure Pipeline YAML is thoroughly tested and validated.
+Relevant documentation on the pipeline structure and trigger mechanism is added.
+User Story 2: Deploy Spring Boot API to Azure App Service
+
+Acceptance Criteria:
+
+The pipeline builds the Spring Boot application from source code and creates an artifact.
+The artifact is successfully deployed to the Azure App Service instance.
+Deployment configurations such as environment variables and scaling settings are correctly set.
+Definition of Done:
+
+Successful build and deployment logs are captured and reviewed.
+Deployment configurations are validated and documented.
+Pipeline artifacts and generated resources are cleaned up after successful deployment.
+User Story 3: Configure Testing in Development Environment
+
+Acceptance Criteria:
+
+Pipeline includes steps to run unit tests and integration tests on the deployed API.
+Test results are captured and reported within the pipeline.
+Definition of Done:
+
+Unit and integration tests are executed successfully and produce expected results.
+Test results are recorded and presented in the pipeline logs or reports.
+Documentation on the testing process and its integration into the pipeline is provided.
+User Story 4: Verify Deployment in Dev Environment
+
+Acceptance Criteria:
+
+Deployed API endpoints are accessible and return expected responses.
+Integration and unit tests are successful, indicating correct API behavior.
+Definition of Done:
+
+All deployed endpoints are verified and tested.
+Integration and unit tests pass without errors or failures.
+Documentation on the verification process and any detected issues is created.
+User Story 5: Documentation and Knowledge Sharing
+
+Acceptance Criteria:
+
+Documentation is created, outlining the pipeline setup, deployment steps, and testing process.
+The documentation is shared with the team and accessible for reference.
+Definition of Done:
+
+Documentation is comprehensive and covers all steps required for pipeline creation and usage.
+Documentation is reviewed and approved by team members.
+Documentation is stored in a designated repository or knowledge-sharing platform.
+User Story 6: Cleanup and Optimization
+
+Acceptance Criteria:
+
+Cleanup tasks are integrated into the pipeline to remove unnecessary resources or artifacts.
+Unused resources are identified and properly managed to optimize costs.
+Definition of Done:
+
+Cleanup tasks are tested and confirmed to remove only the intended resources.
+Resource cleanup logs and reports are reviewed.
+Documentation on resource cleanup procedures and optimization efforts is prepared.
 
 
 
