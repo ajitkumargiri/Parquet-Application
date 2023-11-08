@@ -1,85 +1,61 @@
 End-to-End Integration Test Automation Documentation
 
-Step 1: Project Setup
+Step 1: Create a New API Testing Project
 
-Begin by creating a new project or incorporating test modules into an existing Spring Boot project.
+Begin by creating a new Spring Boot project dedicated to API testing using Cucumber and Karate. This project should be separate from our main application project to ensure clean separation.
 
 Step 2: Test Dependencies
 
-Add the necessary dependencies to your project, including:
-
-spring-boot-starter-test for Spring Boot testing support.
-karate for Karate DSL (if you're using Karate for API testing).
-Other relevant dependencies aligned with your application's technology stack.
+In our test project, add the necessary dependencies, including the following:
+Frameworks and libraries suitable for API testing and end-to-end integration testing (e.g., Spring Boot, Cucumber, Karate).
+Libraries or tools specific to the java and azure for interacting with APIs and azure resources.
+ 
 Step 3: Test Data Preparation
 
-Prepare the initial state of your application or database to ensure consistent test conditions. Use Spring @TestConfiguration or other suitable mechanisms to provide test-specific configurations.
+Prepare test data tailored to the specific environments you'll be testing (e.g., development, testing, staging). Ensure that our test data is isolated from the production environment.
 
-Step 4: Cucumber Feature Files
+Step 4: Environment Configuration
 
-Create Cucumber feature files that encompass scenarios describing the end-to-end test cases. Employ Gherkin syntax to draft human-readable scenarios.
+Configure our test project to connect to the target environment (e.g., dev, test, et) for both API testing and end-to-end integration testing. Ensure that our tests interact with the correct environment's API endpoints, databases, and data. Avoid any interactions with the production environment.
 
-Step 5: Karate Step Definitions (If Using Karate)
+Step 5: API Testing Scenarios
 
-Compose Karate step definitions to map Gherkin steps to Java code. Configure Karate to conduct API calls, engage with your application, and validate responses.
+Define test scenarios that cover various aspects of API functionality for our application, such as endpoint testing, request and response validation, error handling, and authentication tests. Make sure these tests are relevant to the specific environment you are testing.
 
-Step 6: Spring Boot Test Configuration
+Step 6: Test Execution
 
-Adapt your Spring Boot application for testing purposes. You may need to employ a dedicated test configuration or profiles for specific components (e.g., using an H2 in-memory database instead of the production database).
-
-Step 7: Test Runner
-
-Develop a test runner class annotated with @RunWith(Cucumber.class) to execute the Cucumber tests. Configure the runner to specify the location of your feature files and step definitions.
-
-Step 8: Execute Tests
-
-Execute your end-to-end integration tests employing your chosen build tool (e.g., Maven or Gradle) or a suitable integrated development environment (IDE). Keep a vigilant eye on the test execution for potential failures and scrutinize comprehensive test reports.
+Execute our API tests and end-to-end integration tests within the designated environment (e.g., dev, test, staging). Ensure that these tests do not impact or interact with the production environment. This is essential to prevent unintended consequences in a live system.
 
 Step 9: Assertions and Validation
 
 Conduct thorough validation and assertion procedures to ensure the application functions correctly and produces expected outcomes. Here are specific validation steps:
 
+Response Status Codes: Confirm that the API returns the expected HTTP status codes in the target environment.
+Response Data: Validate the content of API responses to ensure they match the expected data for the specific environment being tested.
+Error Handling: Verify that the API correctly handles and reports errors, providing clear error messages or status codes.
+
 SQL Server Database Validation:
 
-Data Retrieval: Use SQL queries or your preferred ORM framework to fetch data from the SQL Server database.
-Data Comparison: Compare the retrieved data with the expected data or data submitted during the test.
-Data Integrity: Verify the integrity of data by checking for constraints and relationships.
-Transaction Validation: Confirm transactions are correctly committed and rolled back on failure.
-Performance and Scalability: Assess the performance and scalability of the SQL Server database.
-Security and Permissions: Ensure that the application can access data it's authorized to access.
-Cosmos DB Validation:
+Data Retrieval: Use SQL queries or your preferred ORM framework to fetch data from the SQL Server database. 
+Data Comparison: Compare the retrieved data with the expected data or data submitted during the test. 
+Data Integrity: Verify the integrity of data by checking for constraints and relationships. 
+Transaction Validation: Confirm transactions are correctly committed and rolled back on failure. 
+Performance and Scalability: Assess the performance and scalability of the SQL Server database. Security and Permissions: Ensure that the application can access data it's authorized to access. Cosmos DB Validation:
 
-Document Retrieval: Use Cosmos DB SDK/API to retrieve documents.
-Document Comparison: Compare the retrieved documents with the expected data.
-Partition Key Validation: Ensure correct partition key usage.
-Consistency Levels: Validate chosen consistency levels align with application requirements.
-Performance and Throughput: Monitor request units (RUs) consumption and adjust throughput settings.
-Indexing: Verify indexing strategy supports query performance.
-Security and Authorization: Confirm access control policies and security measures are correctly configured.
-Partitioning and Scaling: Ensure Cosmos DB scales dynamically and is optimized for data distribution and query efficiency.
-Step 10: Test Cleanup
+Document Retrieval: Use Cosmos DB SDK/API to retrieve documents. Document Comparison: Compare the retrieved documents with the expected data. Partition Key Validation: Ensure correct partition key usage. Consistency Levels: Validate chosen consistency levels align with application requirements. Performance and Throughput: Monitor request units (RUs) consumption and adjust throughput settings. Indexing: Verify indexing strategy supports query performance. Security and Authorization: Confirm access control policies and security measures are correctly configured. Partitioning and Scaling: Ensure Cosmos DB scales dynamically and is optimized for data distribution and query efficiency. Step 10: Test Cleanup
 
 Implement cleanup procedures, such as resetting the database to its original state or disassembling any temporary resources created during the test.
+Step 8: Test Reports
 
-Step 11: Reporting
+Generate comprehensive test reports that provide information about the test results in the environment being tested (e.g., dev, test, staging). These reports should not contain any information related to the production environment.
 
-Generate test reports that encompass details regarding test results, encompassing both passed and failed scenarios.
+Step 9: CI/CD Integration
 
-Step 12: CI/CD Integration
+Integrate our API tests and end-to-end integration tests into the Continuous Integration/Continuous Deployment (CI/CD) pipeline. Ensure that these tests are automatically executed in the designated environment with each code deployment while avoiding any impact on the production environment.
 
-Seamlessly integrate your end-to-end integration tests into your Continuous Integration/Continuous Deployment (CI/CD) pipeline to enable automatic test execution with every code deployment.
+Step 10: Test Maintenance
 
-Step 13: Test Maintenance
-
-Regularly review and update your tests to accommodate changes within the application and extend your test suite to encompass new test cases as features evolve.
-
-Step 14: Documentation
-
-Document the end-to-end integration testing process, including details regarding the structure of your feature files, step definitions, and any distinctive configurations. Provide illustrative examples of Gherkin scenarios and Karate step definitions. Distribute the documentation among your development and testing teams for reference and collaboration.
-
-Step 15: Best Practices
-
-When developing your test automation, consider and apply best practices. This may include crafting descriptive step definitions, making use of test data factories, and maintaining an organized project structure.
+Regularly review and update our API tests and end-to-end integration tests to adapt to changes in the application or the test environments. Add new test cases as features evolve.
 
 
 ====================================================================
