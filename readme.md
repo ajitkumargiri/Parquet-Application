@@ -1,3 +1,59 @@
+
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.parquet.ParquetReadOptions;
+import org.apache.parquet.arrow.ArrowFileReader;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.schema.MessageType;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+
+public class ReadParquetFilesFromResourcesExample {
+    public static void main(String[] args) {
+        String parquetResourcePath = "your_folder_name"; // Adjust the path as needed
+
+        try {
+            // Get Parquet metadata from the resource file
+            InputStream resourceStream = Objects.requireNonNull(
+                    ReadParquetFilesFromResourcesExample.class.getClassLoader().getResourceAsStream(parquetResourcePath));
+
+            // Get Parquet schema
+            ParquetMetadata parquetMetadata = ParquetFileReader.readFooter(resourceStream, ParquetReadOptions.builder().build());
+            MessageType schema = parquetMetadata.getFileMetaData().getSchema();
+
+            // Create ArrowFileReader
+            ArrowFileReader arrowFileReader = new ArrowFileReader(resourceStream, new RootAllocator(Long.MAX_VALUE));
+
+            // Create VectorSchemaRoot
+            VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
+
+            // Create ParquetReader
+            ParquetReader<Void> reader = new ParquetReader<>(arrowFileReader, vectorSchemaRoot, schema);
+
+            // Read rows
+            while (true) {
+                Void v = reader.read();
+                if (v == null) {
+                    break;
+                }
+                // Process each row as needed
+                System.out.println(vectorSchemaRoot.getVector(0).getObject(0));
+            }
+
+            // Close resources
+            reader.close();
+            arrowFileReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
 End-to-End Integration Test Automation Documentation
 
 Step 1: Create a New API Testing Project
