@@ -1,4 +1,37 @@
 
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import udf, struct, col
+from pyspark.sql.types import StructType, StructField, StringType
+
+# Create a Spark session
+spark = SparkSession.builder.appName("example").getOrCreate()
+
+# Assuming df is your DataFrame with columns: 'id', 'name', 'addresses'
+# 'addresses' is assumed to be a list of JSON objects
+
+# Sample data
+data = [(1, "John", '[{"city":"New York","state":"NY"},{"city":"San Francisco","state":"CA"}]'),
+        (2, "Alice", '[{"city":"Los Angeles","state":"CA"}]')]
+
+# Define the schema for the JSON objects in 'addresses'
+address_schema = StructType([StructField("city", StringType()), StructField("state", StringType())])
+
+# Create the DataFrame
+df = spark.createDataFrame(data, ["id", "name", "addresses"])
+
+# Define a UDF to create a JSON object for each record
+def create_json(id, name, addresses):
+    return {'id': id, 'name': name, 'addresses': json.loads(addresses)}
+
+# Apply the UDF to create a new column 'record_json'
+create_json_udf = udf(create_json, StructType([StructField("id", StringType()), StructField("name", StringType()), StructField("addresses", address_schema)]))
+df = df.withColumn("record_json", create_json_udf("id", "name", "addresses"))
+
+# Show the resulting DataFrame
+df.show(truncate=False)
+
+
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.parquet.ParquetReadOptions;
