@@ -1,3 +1,31 @@
+import org.apache.avro.generic.GenericRecord;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class YourService {
+
+    private final AvroMapper avroMapper;
+
+    @Autowired
+    public YourService(AvroMapper avroMapper) {
+        this.avroMapper = avroMapper;
+    }
+
+    public void processAvroRecords(List<GenericRecord> avroRecords) {
+        for (GenericRecord avroRecord : avroRecords) {
+            // Map Avro record to Employee object
+            Employee employee = avroMapper.avroRecordToEmployee(avroRecord);
+
+            // Process the mapped Employee object
+            System.out.println("Mapped Employee: " + employee.toString());
+        }
+    }
+}
+
+
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
