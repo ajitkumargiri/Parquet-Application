@@ -3,6 +3,43 @@ import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.FileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
+
+import java.io.File;
+import java.io.IOException;
+
+public class GetAvroSchemaFromAvroFileExample {
+    public static void main(String[] args) {
+        String avroFilePath = "path/to/your.avro"; // Adjust the path as needed
+
+        try {
+            File avroFile = new File(avroFilePath);
+
+            // Create a GenericDatumReader
+            GenericDatumReader<GenericRecord> datumReader = new GenericDatumReader<>();
+
+            // Create a DataFileReader
+            try (FileReader<GenericRecord> dataFileReader = DataFileReader.openReader(avroFile, datumReader)) {
+                // Get the Avro schema
+                Schema avroSchema = dataFileReader.getSchema();
+                
+                // Print the Avro schema
+                System.out.println("Avro Schema:");
+                System.out.println(avroSchema.toString(true));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.FileReader;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
 
 import java.io.File;
