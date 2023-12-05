@@ -1,3 +1,83 @@
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.FileReader;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+
+import java.io.File;
+import java.io.IOException;
+
+public class AvroReader {
+    public static void main(String[] args) {
+        // Replace 'your_avro_folder_path' with the path to your Avro files folder
+        String avroFolderPath = "your_avro_folder_path";
+
+        // Obtain the Avro schema (you may have a separate .avsc file or use the schema embedded in the Avro file)
+        Schema schema = getAvroSchema();
+
+        // Read all Avro files in the folder
+        File folder = new File(avroFolderPath);
+        File[] files = folder.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().endsWith(".avro")) {
+                    readAvroFile(file, schema);
+                }
+            }
+        }
+    }
+
+    private static Schema getAvroSchema() {
+        // Replace 'your_avro_schema' with your Avro schema in JSON format
+        String avroSchemaJson = "your_avro_schema";
+        return new Schema.Parser().parse(avroSchemaJson);
+    }
+
+    private static void readAvroFile(File avroFile, Schema schema) {
+        try {
+            DatumReader<GenericRecord> datumReader = new GenericDatumReader<>(schema);
+            try (FileReader<GenericRecord> fileReader = DataFileReader.openReader(avroFile, datumReader)) {
+                for (GenericRecord record : fileReader) {
+                    // Process each Avro record (GenericRecord)
+                    System.out.println(record);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>your.group.id</groupId>
+    <artifactId>AvroReaderExample</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.10.2</version> <!-- Adjust version based on your Avro version -->
+        </dependency>
+    </dependencies>
+</project>
+
+
+
+
 
 
 from pyspark.sql import SparkSession
