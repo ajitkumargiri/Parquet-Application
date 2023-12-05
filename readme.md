@@ -1,3 +1,35 @@
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
+import java.util.List;
+
+@Mapper
+public interface AvroMapper {
+    AvroMapper INSTANCE = Mappers.getMapper(AvroMapper.class);
+
+    @Mapping(source = "employeeId", target = "employeeId")
+    @Mapping(source = "employeeName", target = "employeeName")
+    @Mapping(source = "addresses", target = "addressList")
+    @Mapping(source = "communications", target = "communicationList")
+    Employee avroRecordToEmployee(GenericRecord avroRecord);
+
+    @Mapping(source = "streetName", target = "streetName")
+    @Mapping(source = "countryName", target = "countryName")
+    @Mapping(source = "stateName", target = "stateName")
+    Address avroRecordToAddress(GenericRecord avroRecord);
+
+    @Mapping(source = "mobileNumber", target = "mobileNumber")
+    @Mapping(source = "phoneNumber", target = "phoneNumber")
+    Communication avroRecordToCommunication(GenericRecord avroRecord);
+
+    List<Address> avroArrayToAddressList(List<GenericRecord> avroArray);
+
+    List<Communication> avroArrayToCommunicationList(List<GenericRecord> avroArray);
+}
+
+
+
+
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.FileReader;
