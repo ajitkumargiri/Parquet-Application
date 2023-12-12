@@ -1,3 +1,37 @@
+import com.fasterxml.jackson.dataformat.avro.AvroSchema;
+import com.fasterxml.jackson.dataformat.avro.AvroSchemaModule;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class AvroSchemaGenerationExample {
+    public static void main(String[] args) {
+        try {
+            // Create an Avro schema from a file
+            File avroSchemaFile = new File("path/to/your.avsc");
+            AvroSchema avroSchema = new AvroSchemaModule().module().getAvroSchema(avroSchemaFile);
+
+            // Generate Java classes from the Avro schema
+            List<AvroSchema.Field> fields = avroSchema.getFields();
+            for (AvroSchema.Field field : fields) {
+                System.out.println("Field Name: " + field.getName());
+                System.out.println("Field Type: " + field.getType());
+                // Add more processing as needed
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+
+
+
+
+
 Full Avro Schema Confluence
 
 ChatGPT 3.5
