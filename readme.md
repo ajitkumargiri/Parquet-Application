@@ -1,3 +1,37 @@
+ChatGPT 3.5
+
+User
+Rewrite: although I am not part of design circle. I have redesigned the most of the flow again. And I feel we need more re design.
+There are a open question how to process relationships. It was really complex as per the team. But   Yesterday I have resolved the complex relationship way to handle.
+I believe the design should be robust and future proof. As a experience technical person I can see the some flaws in design. I am still looking into the current design and thinking some need to be redesign. 
+I was happy that yesterday my proposed solution accepted by Eric and team.
+Last week had a proposal for initial lod and on demand reconciliation Rahul .
+Rahul accepted my solution.
+I am bit worried that if we will not make the design concrete then it will delay our development and we do rework again and again. What we currently doing.
+
+ChatGPT
+Though I'm not formally involved in the design circle, I've taken the initiative to revamp a significant portion of the flow. I sense the need for further redesign. The handling of relationship processing posed a considerable challenge, but I successfully addressed it yesterday, simplifying the approach.
+
+Emphasizing the importance of a robust and future-proof design, my experience in technology allows me to identify certain flaws. I'm currently scrutinizing the existing design and contemplating necessary adjustments. It was satisfying that Eric and the team accepted my proposed solution yesterday.
+
+Last week, I proposed an initial LOD and on-demand reconciliation to Rahul, and he approved my solution. I'm concerned that without solidifying the design, our development may face delays, leading to repetitive rework, which is a pattern we need to avoid.
+
+
+
+
+User
+In simple and good wording 
+
+ChatGPT
+Even though I'm not officially part of the design team, I took it upon myself to revamp a big chunk of our flow. I think we still need more redesign to get things just right. Sorting out how we handle relationships was tricky, but I cracked it yesterday, making it simpler for the team.
+
+I'm all about making our design strong and ready for whatever comes next. With my tech experience, I've spotted a few areas that could use some tweaks. I'm currently going through the current design, thinking about what needs a makeover.
+
+It felt great that Eric and the team gave the thumbs up to my solution yesterday. Last week, I pitched an idea to Rahul about initial LOD and on-demand reconciliation, and he liked it. But, I'm a bit worried – if we don't lock in the design, we might end up delaying development with repetitive rework, and that's not where we want to be.
+
+
+
+
 import com.fasterxml.jackson.dataformat.avro.AvroSchema;
 import com.fasterxml.jackson.dataformat.avro.AvroSchemaModule;
 
