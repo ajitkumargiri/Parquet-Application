@@ -1,3 +1,148 @@
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.SeekableFileInput;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+
+import java.io.File;
+import java.io.IOException;
+
+public class AvroReader {
+    public static void main(String[] args) {
+        try {
+            // Provide the path to your Avro file
+            File avroFile = new File("path/to/your/file.avro");
+
+            // Create a SeekableFileInput from the Avro file
+            SeekableFileInput avroInput = new SeekableFileInput(avroFile);
+
+            // Create a DatumReader for GenericRecord
+            DatumReader<GenericRecord> datumReader = new GenericDatumReader<>();
+
+            // Create a DataFileReader to read the Avro file
+            DataFileReader<GenericRecord> dataFileReader = new DataFileReader<>(avroInput, datumReader);
+
+            // Iterate through the Avro file records
+            while (dataFileReader.hasNext()) {
+                // Get the GenericRecord
+                GenericRecord genericRecord = dataFileReader.next();
+
+                // Map the GenericRecord to your Java objects (Employee, Addresses, Relationships)
+                Employee employee = mapToEmployee(genericRecord);
+
+                // Process the Employee object as needed
+                // ...
+
+                // Access the nested structures (Addresses, Relationships)
+                // List<Addresses> addresses = mapToAddresses(genericRecord);
+                // List<Relationship> relationships = mapToRelationships(genericRecord);
+            }
+
+            // Close the DataFileReader
+            dataFileReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Employee mapToEmployee(GenericRecord genericRecord) {
+        // Implement your logic to map GenericRecord to Employee
+        // ...
+
+        return employee;
+    }
+
+    // Implement similar methods to map other nested structures (Addresses, Relationships)
+    // private static List<Address> mapToAddresses(GenericRecord genericRecord) { ... }
+    // private static List<Relationship> mapToRelationships(GenericRecord genericRecord) { ... }
+}
+
+
+
+
+import org.apache.avro.generic.GenericArray;
+import org.apache.avro.generic.GenericRecord;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class AvroMapper {
+
+    public static Employee mapToEmployee(GenericRecord genericRecord) {
+        Employee employee = new Employee();
+
+        employee.setId((Integer) genericRecord.get("id"));
+        employee.setName((String) genericRecord.get("name"));
+
+        // Map Addresses
+        List<Address> addresses = mapToAddresses((GenericArray<GenericRecord>) genericRecord.get("addresses"));
+        employee.setAddresses(addresses);
+
+        // Map Relationships
+        List<Relationship> relationships = mapToRelationships((GenericArray<GenericRecord>) genericRecord.get("relationships"));
+        employee.setRelationships(relationships);
+
+        return employee;
+    }
+
+    private static List<Address> mapToAddresses(GenericArray<GenericRecord> genericArray) {
+        List<Address> addresses = new ArrayList<>();
+
+        for (GenericRecord record : genericArray) {
+            Address address = new Address();
+            address.setCity((String) record.get("city"));
+            address.setCountry((String) record.get("country"));
+            addresses.add(address);
+        }
+
+        return addresses;
+    }
+
+    private static List<Relationship> mapToRelationships(GenericArray<GenericRecord> genericArray) {
+        List<Relationship> relationships = new ArrayList<>();
+
+        for (GenericRecord record : genericArray) {
+            Relationship relationship = new Relationship();
+            relationship.setType((String) record.get("type"));
+            relationship.setAttribute1((Integer) record.get("attribute1"));
+            relationship.setAttribute2((String) record.get("attribute2"));
+            relationships.add(relationship);
+        }
+
+        return relationships;
+    }
+
+    // Define your Employee, Address, and Relationship classes with appropriate getters and setters.
+}
+
+class Employee {
+    private int id;
+    private String name;
+    private List<Address> addresses;
+    private List<Relationship> relationships;
+
+    // Getters and setters
+}
+
+class Address {
+    private String city;
+    private String country;
+
+    // Getters and setters
+}
+
+class Relationship {
+    private String type;
+    private int attribute1;
+    private String attribute2;
+
+    // Getters and setters
+}
+
+
+
+
+
 Certainly! Below is an example of how you can structure a Spring Batch job with steps for reading Avro data and mapping it to Java objects. Please adapt the code according to your project structure and requirements.
 
 java
