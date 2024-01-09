@@ -1,3 +1,113 @@
+
+Certainly! If you only need to read Avro files using the Apache Avro library in a Spring Batch job, you can create a custom ItemReader without involving Snappy compression or any specific codec. Here's an example:
+
+java
+Copy code
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DecoderFactory;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.BeforeStep;
+import org.springframework.batch.item.ExecutionContext;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.core.io.Resource;
+
+import java.io.IOException;
+
+public class AvroItemReader implements ItemReader<GenericRecord> {
+
+    private DataFileReader<GenericRecord> dataFileReader;
+    private String filePath;
+
+    public AvroItemReader(String filePath) {
+        this.filePath = filePath;
+    }
+
+    @BeforeStep
+    public void beforeStep(StepExecution stepExecution) throws IOException {
+        ExecutionContext executionContext = stepExecution.getExecutionContext();
+        Resource avroResource = new FileSystemResource(filePath);
+
+        DatumReader<GenericRecord> datumReader = new GenericDatumReader<>();
+        this.dataFileReader = new DataFileReader<>(avroResource.getFile(), datumReader);
+    }
+
+    @Override
+    public GenericRecord read() throws IOException {
+        if (dataFileReader.hasNext()) {
+            return dataFileReader.next();
+        } else {
+            dataFileReader.close();
+            return null;
+        }
+    }
+}
+In this example:
+
+The AvroItemReader initializes a DataFileReader without specifying a codec, assuming that your Avro files are not compressed or are using a codec that doesn't require additional configuration.
+Now, configure this custom reader in your BatchConfiguration:
+
+java
+Copy code
+@Configuration
+public class BatchConfiguration {
+
+    // ... other beans and configurations
+
+    @Value("${input.avro.file.path}") // Assuming you're using Spring's Value annotation
+    private String avroFilePath;
+
+    @Bean
+    public AvroItemReader avroItemReader() {
+        return new AvroItemReader(avroFilePath);
+    }
+
+    @Bean
+    public ItemProcessor<GenericRecord, GenericRecord> avroItemProcessor() {
+        return item -> {
+            // Your processing logic here
+            // If there's an error, you can throw an exception or mark the record accordingly
+            return item;
+        };
+    }
+
+    @Bean
+    public ItemWriter<GenericRecord> avroErrorItemWriter() {
+        FlatFileItemWriter<GenericRecord> writer = new FlatFileItemWriter<>();
+        writer.setResource(new FileSystemResource("error_records.txt"));
+        writer.setLineAggregator(new PassThroughLineAggregator<>());
+        return writer;
+    }
+
+    @Bean
+    public Step processAvroRecordsStep(AvroItemReader avroItemReader,
+                                       ItemProcessor<GenericRecord, GenericRecord> avroItemProcessor,
+                                       ItemWriter<GenericRecord> avroErrorItemWriter) {
+        return stepBuilderFactory.get("processAvroRecordsStep")
+                .<GenericRecord, GenericRecord>chunk(10)
+                .reader(avroItemReader)
+                .processor(avroItemProcessor)
+                .writer(avroErrorItemWriter)
+                .build();
+    }
+}
+This configuration assumes that your Avro files are not compressed or are using a codec that doesn't require additional configuration. Adjust the code based on your specific Avro file characteristics and requirements.
+
+
+
+
+
+
+Message ChatGPT…
+
+ChatGPT can make 
+
+
+
+
+
+
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
