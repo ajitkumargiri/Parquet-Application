@@ -1,4 +1,59 @@
 import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.BeforeStep;
+import org.springframework.batch.item.ExecutionContext;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.core.io.Resource;
+
+import java.io.IOException;
+
+public class SnappyAvroItemReader implements ItemReader<GenericRecord> {
+
+    private DataFileReader<GenericRecord> dataFileReader;
+    private String filePath; // New field to store the file path
+
+    public SnappyAvroItemReader(String filePath) {
+        this.filePath = filePath;
+    }
+
+    @BeforeStep
+    public void beforeStep(StepExecution stepExecution) throws IOException {
+        ExecutionContext executionContext = stepExecution.getExecutionContext();
+        Resource avroResource = new FileSystemResource(filePath);
+
+        DatumReader<GenericRecord> datumReader;
+        if (avroResource.getFilename().endsWith(".avro")) {
+            datumReader = new GenericDatumReader<>();
+        } else {
+            // Use SpecificDatumReader if the Avro schema is specific
+            // datumReader = new SpecificDatumReader<>();
+            // Adjust this according to your schema type
+            throw new UnsupportedOperationException("Specify the appropriate DatumReader for your Avro schema type.");
+        }
+
+        // Configure Snappy decompression
+        this.dataFileReader = new DataFileReader<>(avroResource.getFile(), datumReader);
+        this.dataFileReader.setCodec(CodecFactory.snappyCodec());
+    }
+
+    @Override
+    public GenericRecord read() throws IOException {
+        if (dataFileReader.hasNext()) {
+            return dataFileReader.next();
+        } else {
+            dataFileReader.close();
+            return null;
+        }
+    }
+}
+
+
+
+import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.springframework.batch.core.StepExecution;
