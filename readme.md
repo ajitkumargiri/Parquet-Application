@@ -1,3 +1,41 @@
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.BeforeStep;
+import org.springframework.batch.item.ExecutionContext;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.core.io.Resource;
+
+import java.io.IOException;
+
+public class AvroCustomItemReader implements ItemReader<GenericRecord> {
+
+    private DataFileReader<GenericRecord> dataFileReader;
+
+    @BeforeStep
+    public void beforeStep(StepExecution stepExecution) throws IOException {
+        ExecutionContext executionContext = stepExecution.getExecutionContext();
+        Resource avroResource = (Resource) executionContext.get("avroResource");
+
+        GenericDatumReader<GenericRecord> datumReader = new GenericDatumReader<>();
+        this.dataFileReader = new DataFileReader<>(avroResource.getFile(), datumReader);
+    }
+
+    @Override
+    public GenericRecord read() throws IOException {
+        if (dataFileReader.hasNext()) {
+            return dataFileReader.next();
+        } else {
+            dataFileReader.close();
+            return null;
+        }
+    }
+}
+
+
+
+
 
 Certainly! To achieve this in a Spring Boot application, you can use the spring-boot-starter-avro and spring-boot-starter-batch dependencies. Below is a simplified example:
 
