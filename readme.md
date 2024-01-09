@@ -1,3 +1,53 @@
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.xerial.snappy.SnappyInputStream;
+import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+
+import java.io.IOException;
+
+@StepScope
+public class CustomAvroItemReader implements ItemReader<GenericRecord> {
+
+    private final Resource avroResource;
+    private DataFileReader<GenericRecord> dataFileReader;
+
+    public CustomAvroItemReader(@Value("#{jobParameters['avroFilePath']}") Resource avroResource) {
+        this.avroResource = avroResource;
+    }
+
+    @Override
+    public GenericRecord read() throws Exception {
+        if (dataFileReader.hasNext()) {
+            return dataFileReader.next();
+        } else {
+            dataFileReader.close();
+            return null;
+        }
+    }
+
+    public void open() throws IOException {
+        this.dataFileReader = new DataFileReader<>(new SnappyInputStream(avroResource.getInputStream()), new GenericDatumReader<>());
+    }
+
+    public void close() throws IOException {
+        if (dataFileReader != null) {
+            dataFileReader.close();
+        }
+    }
+
+    // Other methods...
+}
+
+
+
+
+
+
+
 
 Certainly! If you only need to read Avro files using the Apache Avro library in a Spring Batch job, you can create a custom ItemReader without involving Snappy compression or any specific codec. Here's an example:
 
