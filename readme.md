@@ -1,3 +1,26 @@
+graph TD
+  A[Read Avro File]
+  B[Transform to Employee Records]
+  C[Read Dependencies from SQL]
+  D[Transform Dependent Users]
+  E[Store in CosmosDB]
+  F[Update Relationships in SQL]
+  G[Check for New Records]
+  LogErrors[Error Handling]
+  Monitoring[Monitoring]
+
+  A -->|Avro File| B
+  B -->|Transformed Records| D
+  C -->|User Records| D
+  D -->|Final Employee Records| E
+  D -->|Final Employee Records| F
+  G -->|Transformed Records, User Records| B
+  E -->|Stored Records| Monitoring
+  LogErrors -->|Error Information| Monitoring
+
+
+
+
 
 Certainly! Below is a high-level solution design using Mermaid code for the described scenario. This includes handling dependencies, storing relationships in an SQL database, and transforming records into CosmosDB while ensuring a fail-safe mechanism.
 
