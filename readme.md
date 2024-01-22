@@ -1,4 +1,51 @@
 graph TD
+  subgraph Processor
+    P[Processor]
+  end
+
+  subgraph Creator
+    C[Creator]
+    A[Read Avro File]
+  end
+
+  subgraph Transformer
+    T[Transformer]
+    B[Transform to Employee Records]
+    D[Transform Dependent Users]
+    G[Check for New Records]
+  end
+
+  subgraph ErrorHandling
+    E[Error Handling]
+    L[Logging]
+  end
+
+  subgraph StoreInDatabases
+    S[Store in CosmosDB]
+    U[Update Relationships in SQL]
+  end
+
+  A -->|Raw Avro Data| C
+  C -->|User Registration Records| P
+  P -->|Sequential Orchestration| B
+  B -->|Transformed Employee Records| D
+  D -->|Final Employee Records| S
+  D -->|Final Employee Records| U
+  P -->|Error Handling| E
+  E -->|Error Information| L
+  P -->|Logs| L
+  G -->|Transformed Records, User Records| B
+
+
+
+  
+
+
+
+
+
+
+graph TD
   A[Read Avro File]
   B[Transform to Employee Records]
   C[Read Dependencies from SQL]
