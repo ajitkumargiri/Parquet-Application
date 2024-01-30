@@ -1,3 +1,22 @@
+graph TD;
+    Start((Start)) --> Input[Input empid, userID, and emptype]
+    Input -->|Check empid and emptype from emptbl| CheckEmpid
+    CheckEmpid -->|Present| UpdateFlow
+    CheckEmpid -->|Not Present| CheckUserID
+    CheckUserID -->|Not Present| NewEmployeeFlow
+    CheckUserID -->|Present with different empid| NewFlow
+    CheckUserID -->|Present with same empid| UpdateFlow
+    UpdateFlow --> End((End))
+    NewEmployeeFlow --> End
+    NewFlow --> End
+    UpdateFlow --> End
+    Input -->|empid present and other two are null| DeleteFlow
+    DeleteFlow --> End
+    
+
+
+
+
 graph TD
   subgraph Processor
     P[Processor]
