@@ -1,6 +1,36 @@
 graph TD;
     Start((Start)) --> Input[Input empid, userID, and emptype]
     Input -->|Check empid and emptype from emptbl| CheckEmpid
+    CheckEmpid -->|Empid found| UpdateFlow{Update Employee<br>Information}
+    CheckEmpid -->|Empid not found| CheckUserID
+    CheckUserID -->|UserID not found| NewEmployeeFlow{Create New<br>Employee Profile}
+    CheckUserID -->|UserID found with different empid| NewFlow{Create New<br>Employee Profile with<br>Updated Information}
+    CheckUserID -->|UserID found with same empid| UpdateFlow
+    UpdateFlow --> End((End))
+    NewEmployeeFlow --> End
+    NewFlow --> End
+    UpdateFlow --> End
+    Input -->|Empid present with null userID and emptype| DeleteFlow{Delete Employee<br>Profile}
+    DeleteFlow --> End
+    
+    style Start fill:#F0F8FF,stroke:#000000,stroke-width:2px
+    style Input fill:#F0F8FF,stroke:#000000,stroke-width:2px
+    style CheckEmpid fill:#E0FFFF,stroke:#000000,stroke-width:2px
+    style UpdateFlow fill:#E0FFFF,stroke:#000000,stroke-width:2px
+    style CheckUserID fill:#E0FFFF,stroke:#000000,stroke-width:2px
+    style NewEmployeeFlow fill:#E0FFFF,stroke:#000000,stroke-width:2px
+    style NewFlow fill:#E0FFFF,stroke:#000000,stroke-width:2px
+    style DeleteFlow fill:#E0FFFF,stroke:#000000,stroke-width:2px
+    style End fill:#F0F8FF,stroke:#000000,stroke-width:2px
+
+
+
+
+
+
+graph TD;
+    Start((Start)) --> Input[Input empid, userID, and emptype]
+    Input -->|Check empid and emptype from emptbl| CheckEmpid
     CheckEmpid -->|Present| UpdateFlow
     CheckEmpid -->|Not Present| CheckUserID
     CheckUserID -->|Not Present| NewEmployeeFlow
