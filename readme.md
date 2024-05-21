@@ -1,3 +1,94 @@
+@Service
+public class ResourceService {
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public void performOperation(String operation, String resource, Object resourceObject) {
+        switch (operation.toUpperCase()) {
+            case "SAVE":
+                saveResource(resource, resourceObject);
+                break;
+            case "UPDATE":
+                updateResource(resource, resourceObject);
+                break;
+            case "DELETE":
+                deleteResource(resource, resourceObject);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid operation: " + operation);
+        }
+    }
+
+    private void saveResource(String resource, Object resourceObject) {
+        switch (resource.toUpperCase()) {
+            case "EMPLOYEE":
+                employeeRepository.save((Employee) resourceObject);
+                break;
+            case "DEPARTMENT":
+                departmentRepository.save((Department) resourceObject);
+                break;
+            case "LOCATION":
+                locationRepository.save((Location) resourceObject);
+                break;
+            case "USER":
+                userRepository.save((User) resourceObject);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid resource: " + resource);
+        }
+    }
+
+    private void updateResource(String resource, Object resourceObject) {
+        saveResource(resource, resourceObject); // For simplicity, reusing save method
+    }
+
+    private void deleteResource(String resource, Object resourceObject) {
+        Long id = null;
+        if (resourceObject instanceof Employee) {
+            id = ((Employee) resourceObject).getId();
+        } else if (resourceObject instanceof Department) {
+            id = ((Department) resourceObject).getId();
+        } else if (resourceObject instanceof Location) {
+            id = ((Location) resourceObject).getId();
+        } else if (resourceObject instanceof User) {
+            id = ((User) resourceObject).getId();
+        }
+
+        if (id != null) {
+            switch (resource.toUpperCase()) {
+                case "EMPLOYEE":
+                    employeeRepository.deleteById(id);
+                    break;
+                case "DEPARTMENT":
+                    departmentRepository.deleteById(id);
+                    break;
+                case "LOCATION":
+                    locationRepository.deleteById(id);
+                    break;
+                case "USER":
+                    userRepository.deleteById(id);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid resource: " + resource);
+            }
+        }
+    }
+}
+
+
+
+
+
+
 Sure, let's create a full Spring Boot application with Drools rule engine using a real-world use case of a retail store discount system.
 
 First, create a Maven project with the following structure:
