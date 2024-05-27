@@ -1,3 +1,180 @@
+
+Certainly! To add comprehensive exception handling to the `ResourceService` class, we can add try-catch blocks around the operations and throw custom exceptions where necessary. We will create a custom exception handler to manage these exceptions gracefully.
+
+### Custom Exception
+
+First, let's define a custom exception for resource not found:
+
+```java
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+### Custom Exception Handler
+
+Next, let's define a global exception handler using `@ControllerAdvice` to manage these exceptions:
+
+```java
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+```
+
+### Updated `ResourceService` Class
+
+Now, let's update the `ResourceService` class with proper exception handling:
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class ResourceService {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Transactional
+    public void handleChange(ChangeAttribute changeAttribute) {
+        try {
+            switch (changeAttribute.getResourceType().toLowerCase()) {
+                case "employee":
+                    handleEmployeeOperation(changeAttribute);
+                    break;
+                case "department":
+                    handleDepartmentOperation(changeAttribute);
+                    break;
+                case "account":
+                    handleAccountOperation(changeAttribute);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid resource type: " + changeAttribute.getResourceType());
+            }
+        } catch (Exception ex) {
+            // Log the error (using a logger, not shown here)
+            throw ex; // Rethrow the exception to be handled by the global exception handler
+        }
+    }
+
+    private void handleEmployeeOperation(ChangeAttribute changeAttribute) {
+        try {
+            switch (changeAttribute.getOperation().toLowerCase()) {
+                case "create":
+                    Employee newEmployee = new Employee();
+                    // Set properties for newEmployee
+                    employeeRepository.save(newEmployee);
+                    break;
+                case "update":
+                    Employee existingEmployee = employeeRepository.findById(changeAttribute.getResourceId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+                    // Update properties for existingEmployee
+                    employeeRepository.save(existingEmployee);
+                    break;
+                case "delete":
+                    employeeRepository.deleteById(changeAttribute.getResourceId());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid operation: " + changeAttribute.getOperation());
+            }
+        } catch (Exception ex) {
+            // Log the error (using a logger, not shown here)
+            throw ex; // Rethrow the exception to be handled by the global exception handler
+        }
+    }
+
+    private void handleDepartmentOperation(ChangeAttribute changeAttribute) {
+        try {
+            switch (changeAttribute.getOperation().toLowerCase()) {
+                case "create":
+                    Department newDepartment = new Department();
+                    // Set properties for newDepartment
+                    departmentRepository.save(newDepartment);
+                    break;
+                case "update":
+                    Department existingDepartment = departmentRepository.findById(changeAttribute.getResourceId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
+                    // Update properties for existingDepartment
+                    departmentRepository.save(existingDepartment);
+                    break;
+                case "delete":
+                    departmentRepository.deleteById(changeAttribute.getResourceId());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid operation: " + changeAttribute.getOperation());
+            }
+        } catch (Exception ex) {
+            // Log the error (using a logger, not shown here)
+            throw ex; // Rethrow the exception to be handled by the global exception handler
+        }
+    }
+
+    private void handleAccountOperation(ChangeAttribute changeAttribute) {
+        try {
+            switch (changeAttribute.getOperation().toLowerCase()) {
+                case "create":
+                    Account newAccount = new Account();
+                    // Set properties for newAccount
+                    accountRepository.save(newAccount);
+                    break;
+                case "update":
+                    Account existingAccount = accountRepository.findById(changeAttribute.getResourceId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+                    // Update properties for existingAccount
+                    accountRepository.save(existingAccount);
+                    break;
+                case "delete":
+                    accountRepository.deleteById(changeAttribute.getResourceId());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid operation: " + changeAttribute.getOperation());
+            }
+        } catch (Exception ex) {
+            // Log the error (using a logger, not shown here)
+            throw ex; // Rethrow the exception to be handled by the global exception handler
+        }
+    }
+}
+```
+
+### Explanation
+
+1. **Exception Handling**: Each operation now includes a try-catch block. If an exception occurs, it logs the error (assuming a logger is set up) and rethrows the exception to be handled by the global exception handler.
+
+2. **Global Exception Handler**: The `GlobalExceptionHandler` class uses `@ControllerAdvice` to handle exceptions thrown by any controller in a centralized manner. It handles both `ResourceNotFoundException` and generic exceptions.
+
+3. **Error Logging**: Error logging should be included in the catch blocks, but it is omitted here for brevity. You should use a logger to log the exceptions.
+
+This approach ensures that exceptions are handled gracefully and that appropriate HTTP status codes are returned to the client.
+
+
+
+
+
 import java.util.List;
 import java.util.stream.Collectors;
 
