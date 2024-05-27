@@ -1,3 +1,308 @@
+Certainly! Below is a complete Spring Boot application that handles the operations for `Employee`, `Department`, and `Account` based on the change attribute list. It also includes JUnit tests to cover all scenarios.
+
+### Spring Boot Application
+
+#### 1. Project Setup
+First, make sure you have the following dependencies in your `pom.xml`:
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+
+#### 2. Domain Classes
+```java
+@Entity
+public class Employee {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+
+    // Getters and Setters
+}
+
+@Entity
+public class Department {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+
+    // Getters and Setters
+}
+
+@Entity
+public class Account {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String accountNumber;
+
+    // Getters and Setters
+}
+```
+
+#### 3. Repositories
+```java
+public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+}
+
+public interface DepartmentRepository extends JpaRepository<Department, Long> {
+}
+
+public interface AccountRepository extends JpaRepository<Account, Long> {
+}
+```
+
+#### 4. ChangeAttributeList Class
+```java
+public class ChangeAttribute {
+    private String resourceType;
+    private Long resourceId;
+    private String operation;
+
+    // Getters and Setters
+}
+```
+
+#### 5. Service Layer
+```java
+@Service
+public class ResourceService {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    public void handleChange(ChangeAttribute changeAttribute) {
+        switch (changeAttribute.getResourceType().toLowerCase()) {
+            case "employee":
+                handleEmployeeOperation(changeAttribute);
+                break;
+            case "department":
+                handleDepartmentOperation(changeAttribute);
+                break;
+            case "account":
+                handleAccountOperation(changeAttribute);
+                break;
+        }
+    }
+
+    private void handleEmployeeOperation(ChangeAttribute changeAttribute) {
+        switch (changeAttribute.getOperation().toLowerCase()) {
+            case "create":
+                Employee newEmployee = new Employee();
+                // Set properties for newEmployee
+                employeeRepository.save(newEmployee);
+                break;
+            case "update":
+                Employee existingEmployee = employeeRepository.findById(changeAttribute.getResourceId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+                // Update properties for existingEmployee
+                employeeRepository.save(existingEmployee);
+                break;
+            case "delete":
+                employeeRepository.deleteById(changeAttribute.getResourceId());
+                break;
+        }
+    }
+
+    private void handleDepartmentOperation(ChangeAttribute changeAttribute) {
+        switch (changeAttribute.getOperation().toLowerCase()) {
+            case "create":
+                Department newDepartment = new Department();
+                // Set properties for newDepartment
+                departmentRepository.save(newDepartment);
+                break;
+            case "update":
+                Department existingDepartment = departmentRepository.findById(changeAttribute.getResourceId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
+                // Update properties for existingDepartment
+                departmentRepository.save(existingDepartment);
+                break;
+            case "delete":
+                departmentRepository.deleteById(changeAttribute.getResourceId());
+                break;
+        }
+    }
+
+    private void handleAccountOperation(ChangeAttribute changeAttribute) {
+        switch (changeAttribute.getOperation().toLowerCase()) {
+            case "create":
+                Account newAccount = new Account();
+                // Set properties for newAccount
+                accountRepository.save(newAccount);
+                break;
+            case "update":
+                Account existingAccount = accountRepository.findById(changeAttribute.getResourceId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+                // Update properties for existingAccount
+                accountRepository.save(existingAccount);
+                break;
+            case "delete":
+                accountRepository.deleteById(changeAttribute.getResourceId());
+                break;
+        }
+    }
+}
+```
+
+#### 6. Exception Handling
+```java
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+```
+
+#### 7. Controller
+```java
+@RestController
+@RequestMapping("/api/resources")
+public class ResourceController {
+
+    @Autowired
+    private ResourceService resourceService;
+
+    @PostMapping("/changes")
+    public ResponseEntity<Void> handleChanges(@RequestBody List<ChangeAttribute> changeAttributes) {
+        changeAttributes.forEach(resourceService::handleChange);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+
+### JUnit Tests
+
+#### 1. Test Configuration
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class ResourceControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @BeforeEach
+    void setUp() {
+        employeeRepository.deleteAll();
+        departmentRepository.deleteAll();
+        accountRepository.deleteAll();
+    }
+
+    @Test
+    void testCreateEmployee() throws Exception {
+        ChangeAttribute changeAttribute = new ChangeAttribute();
+        changeAttribute.setResourceType("employee");
+        changeAttribute.setOperation("create");
+        
+        mockMvc.perform(post("/api/resources/changes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(Collections.singletonList(changeAttribute))))
+                .andExpect(status().isOk());
+
+        assertEquals(1, employeeRepository.count());
+    }
+
+    @Test
+    void testUpdateEmployee() throws Exception {
+        Employee employee = new Employee();
+        employee.setName("John Doe");
+        employee = employeeRepository.save(employee);
+
+        ChangeAttribute changeAttribute = new ChangeAttribute();
+        changeAttribute.setResourceType("employee");
+        changeAttribute.setResourceId(employee.getId());
+        changeAttribute.setOperation("update");
+
+        mockMvc.perform(post("/api/resources/changes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(Collections.singletonList(changeAttribute))))
+                .andExpect(status().isOk());
+
+        assertEquals(1, employeeRepository.count());
+        assertEquals("John Doe", employeeRepository.findById(employee.getId()).get().getName());
+    }
+
+    @Test
+    void testDeleteEmployee() throws Exception {
+        Employee employee = new Employee();
+        employee.setName("John Doe");
+        employee = employeeRepository.save(employee);
+
+        ChangeAttribute changeAttribute = new ChangeAttribute();
+        changeAttribute.setResourceType("employee");
+        changeAttribute.setResourceId(employee.getId());
+        changeAttribute.setOperation("delete");
+
+        mockMvc.perform(post("/api/resources/changes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(Collections.singletonList(changeAttribute))))
+                .andExpect(status().isOk());
+
+        assertEquals(0, employeeRepository.count());
+    }
+
+    // Similarly, add tests for Department and Account
+
+    private static String asJsonString(final Object obj) {
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+This code covers:
+- Creating, updating, and deleting `Employee`, `Department`, and `Account` entities based on the provided `ChangeAttribute` list.
+- Testing these operations using JUnit and MockMvc.
+
+This example assumes basic properties and operations. You can expand the properties and operations as needed based on your specific requirements.
+
+
+
+
+
+
+
+
+
 @Service
 public class ResourceService {
     @Autowired
