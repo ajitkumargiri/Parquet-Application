@@ -1,3 +1,60 @@
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class EmployeeMapper {
+    
+    public static Employee toEntity(EmployeeDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        Employee employee = new Employee();
+        EmployeeId employeeId = new EmployeeId(dto.getFirstName(), dto.getLastName());
+        employee.setId(employeeId);
+        employee.setDepartment(dto.getDepartment());
+        employee.setRole(dto.getRole());
+
+        return employee;
+    }
+
+    public static EmployeeDTO toDTO(Employee entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        EmployeeDTO dto = new EmployeeDTO();
+        dto.setFirstName(entity.getId().getFirstName());
+        dto.setLastName(entity.getId().getLastName());
+        dto.setDepartment(entity.getDepartment());
+        dto.setRole(entity.getRole());
+
+        return dto;
+    }
+
+    public static List<Employee> toEntityList(List<EmployeeDTO> dtoList) {
+        if (dtoList == null || dtoList.isEmpty()) {
+            return null;
+        }
+        return dtoList.stream()
+                      .map(EmployeeMapper::toEntity)
+                      .collect(Collectors.toList());
+    }
+
+    public static List<EmployeeDTO> toDTOList(List<Employee> entityList) {
+        if (entityList == null || entityList.isEmpty()) {
+            return null;
+        }
+        return entityList.stream()
+                         .map(EmployeeMapper::toDTO)
+                         .collect(Collectors.toList());
+    }
+}
+
+
+
+
+
+
 Certainly! Below is a complete Spring Boot application that handles the operations for `Employee`, `Department`, and `Account` based on the change attribute list. It also includes JUnit tests to cover all scenarios.
 
 ### Spring Boot Application
