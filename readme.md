@@ -1,4 +1,28 @@
 
+ChatGPT
+
+Raising a request for mortgage request for HR letter for buying a new house.
+Write subject and remarks 
+ChatGPT
+Subject:
+Request for HR Letter for Mortgage Application
+
+Remarks:
+Dear [HR Manager's Name],
+
+I hope this message finds you well. I am in the process of purchasing a new home and am required to provide an employment verification letter as part of my mortgage application. I would greatly appreciate it if you could provide me with this letter, which should include details such as my employment status, job title, length of employment, and current salary.
+
+Thank you for your assistance with this matter. Please let me know if you need any additional information from my side.
+
+Best regards,
+[Your Name]
+[Your Job Title]
+[Your Contact Information]
+
+
+
+
+
 Certainly! To add comprehensive exception handling to the `ResourceService` class, we can add try-catch blocks around the operations and throw custom exceptions where necessary. We will create a custom exception handler to manage these exceptions gracefully.
 
 ### Custom Exception
