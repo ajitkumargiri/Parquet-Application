@@ -1,3 +1,74 @@
+public class ChangeAttributeHandler {
+
+    public void changeAttr(ResourceType resourceType, Operation operation) {
+        switch (operation) {
+            case ADD:
+                handleAdd(resourceType);
+                break;
+            case UPDATE:
+                handleUpdate(resourceType);
+                break;
+            case DELETE:
+                handleDelete(resourceType);
+                break;
+        }
+    }
+
+    private void handleAdd(ResourceType resourceType) {
+        if (resourceType instanceof Employee) {
+            Employee employee = (Employee) resourceType;
+            // Trigger NewEmployeeEvent
+            NewEmployeeEvent event = new NewEmployeeEvent(employee);
+            // Handle the event
+        } else if (resourceType instanceof Department) {
+            Department department = (Department) resourceType;
+            // Trigger NewDepartmentEvent
+        } else if (resourceType instanceof Account) {
+            Account account = (Account) resourceType;
+            // Trigger NewAccountEvent
+        }
+    }
+
+    private void handleUpdate(ResourceType resourceType) {
+        if (resourceType instanceof Employee) {
+            Employee employee = (Employee) resourceType;
+            if (employee.getContactDetails() != null) {
+                // Trigger UpdateContactDetailsEvent
+                UpdateContactDetailsEvent event = new UpdateContactDetailsEvent(employee.getId(), employee.getContactDetails());
+                // Handle the event
+            } else {
+                // Trigger UpdateEmployeeEvent
+                UpdateEmployeeEvent event = new UpdateEmployeeEvent(employee.getId(), employee.getName(), employee.getPosition(), null);
+                // Handle the event
+            }
+        } else if (resourceType instanceof Department) {
+            Department department = (Department) resourceType;
+            // Trigger UpdateDepartmentEvent
+        } else if (resourceType instanceof Account) {
+            Account account = (Account) resourceType;
+            // Trigger UpdateAccountEvent
+        }
+    }
+
+    private void handleDelete(ResourceType resourceType) {
+        if (resourceType instanceof Employee) {
+            Employee employee = (Employee) resourceType;
+            // Trigger DeleteEmployeeEvent
+            DeleteEmployeeEvent event = new DeleteEmployeeEvent(employee.getId());
+            // Handle the event
+        } else if (resourceType instanceof Department) {
+            Department department = (Department) resourceType;
+            // Trigger DeleteDepartmentEvent
+        } else if (resourceType instanceof Account) {
+            Account account = (Account) resourceType;
+            // Trigger DeleteAccountEvent
+        }
+    }
+}
+
+
+
+
 
 ChatGPT
 
