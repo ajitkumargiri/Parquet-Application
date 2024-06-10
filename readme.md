@@ -1,3 +1,235 @@
+To create a fake object with all attributes populated, including nested classes, list attributes, and various data types including enums, you need a more comprehensive approach. Here's an example of how you can extend the `FakeObjectCreator` utility to handle these cases:
+
+### Example Classes
+
+```java
+import java.util.List;
+
+public class User {
+    private String name;
+    private int age;
+    private String email;
+    private Address address;
+    private List<String> phoneNumbers;
+    private Status status;
+
+    // Constructor
+    public User() {}
+
+    // Getters and setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public Address getAddress() { return address; }
+    public void setAddress(Address address) { this.address = address; }
+
+    public List<String> getPhoneNumbers() { return phoneNumbers; }
+    public void setPhoneNumbers(List<String> phoneNumbers) { this.phoneNumbers = phoneNumbers; }
+
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", email='" + email + '\'' +
+                ", address=" + address +
+                ", phoneNumbers=" + phoneNumbers +
+                ", status=" + status +
+                '}';
+    }
+}
+
+class Address {
+    private String street;
+    private String city;
+    private String zipCode;
+
+    // Constructor
+    public Address() {}
+
+    // Getters and setters
+    public String getStreet() { return street; }
+    public void setStreet(String street) { this.street = street; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getZipCode() { return zipCode; }
+    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
+
+    @Override
+    public String toString() {
+        return "Address{" +
+                "street='" + street + '\'' +
+                ", city='" + city + '\'' +
+                ", zipCode='" + zipCode + '\'' +
+                '}';
+    }
+}
+
+enum Status {
+    ACTIVE, INACTIVE, PENDING;
+}
+```
+
+### Updated `FakeObjectCreator` Utility
+
+```java
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+public class FakeObjectCreator {
+
+    public static Object createFakeObject(Class<?> clazz) throws Exception {
+        // Create an instance of the class using the default constructor
+        Constructor<?> constructor = clazz.getConstructor();
+        Object obj = constructor.newInstance();
+
+        // Get all fields of the class
+        Field[] fields = clazz.getDeclaredFields();
+
+        for (Field field : fields) {
+            field.setAccessible(true);
+            // Set the field with a fake value
+            field.set(obj, getFakeValue(field));
+        }
+
+        return obj;
+    }
+
+    private static Object getFakeValue(Field field) throws Exception {
+        Class<?> type = field.getType();
+        Random random = new Random();
+
+        if (type.equals(String.class)) {
+            return "FakeString" + random.nextInt(1000);
+        } else if (type.equals(int.class) || type.equals(Integer.class)) {
+            return random.nextInt(100);
+        } else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+            return random.nextBoolean();
+        } else if (type.equals(double.class) || type.equals(Double.class)) {
+            return random.nextDouble();
+        } else if (type.equals(long.class) || type.equals(Long.class)) {
+            return random.nextLong();
+        } else if (type.equals(float.class) || type.equals(Float.class)) {
+            return random.nextFloat();
+        } else if (type.isEnum()) {
+            Object[] enumConstants = type.getEnumConstants();
+            return enumConstants[random.nextInt(enumConstants.length)];
+        } else if (List.class.isAssignableFrom(type)) {
+            return createFakeList(field);
+        } else {
+            // Assuming it's a custom object
+            return createFakeObject(type);
+        }
+    }
+
+    private static List<Object> createFakeList(Field field) throws Exception {
+        List<Object> list = new ArrayList<>();
+        Random random = new Random();
+        
+        // Get the generic type of the list
+        Class<?> listType = (Class<?>) ((java.lang.reflect.ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+        
+        int size = random.nextInt(5) + 1;  // Generate a list with 1 to 5 elements
+        for (int i = 0; i < size; i++) {
+            list.add(getFakeValueForType(listType));
+        }
+        return list;
+    }
+
+    private static Object getFakeValueForType(Class<?> type) throws Exception {
+        Random random = new Random();
+        
+        if (type.equals(String.class)) {
+            return "FakeString" + random.nextInt(1000);
+        } else if (type.equals(int.class) || type.equals(Integer.class)) {
+            return random.nextInt(100);
+        } else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+            return random.nextBoolean();
+        } else if (type.equals(double.class) || type.equals(Double.class)) {
+            return random.nextDouble();
+        } else if (type.equals(long.class) || type.equals(Long.class)) {
+            return random.nextLong();
+        } else if (type.equals(float.class) || type.equals(Float.class)) {
+            return random.nextFloat();
+        } else if (type.isEnum()) {
+            Object[] enumConstants = type.getEnumConstants();
+            return enumConstants[random.nextInt(enumConstants.length)];
+        } else {
+            return createFakeObject(type);
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            // Example usage: instantiate User class with fake values
+            User fakeUser = (User) createFakeObject(User.class);
+            System.out.println(fakeUser);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+### Unit Test with JUnit
+
+```java
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.Test;
+
+public class FakeObjectCreatorTest {
+
+    @Test
+    public void testCreateFakeUser() throws Exception {
+        // Create a fake User object
+        User fakeUser = (User) FakeObjectCreator.createFakeObject(User.class);
+
+        // Assertions to check if the object is correctly created and populated
+        assertNotNull(fakeUser);
+        assertNotNull(fakeUser.getName());
+        assertNotNull(fakeUser.getEmail());
+        assertNotNull(fakeUser.getAge());
+        assertNotNull(fakeUser.getAddress());
+        assertNotNull(fakeUser.getPhoneNumbers());
+        assertNotNull(fakeUser.getStatus());
+
+        System.out.println(fakeUser);
+    }
+}
+```
+
+### Explanation:
+
+1. **FakeObjectCreator:**
+   - The `createFakeObject` method creates an instance of the given class and populates its fields with fake values.
+   - The `getFakeValue` method handles various data types, including enums and lists.
+   - The `createFakeList` method generates a list with elements of the appropriate type.
+   - The `getFakeValueForType` method generates fake values for specified types.
+
+2. **JUnit Test:**
+   - The `FakeObjectCreatorTest` class contains a test method that uses the `FakeObjectCreator` to create a fake `User` object and asserts that the object and its fields are not null.
+
+This comprehensive approach ensures that you can create and test objects with nested classes, list attributes, and various data types, making your unit tests more robust and meaningful.
+
+
+
+
+
 Creating a fake object with all attributes populated can be particularly useful for unit testing with JUnit. One common approach is to use libraries such as Mockito for mocking objects, but if you want to manually create an object with populated values, you can do so by writing utility methods to generate these objects. Here's how you can achieve this in Java:
 
 ### Example Class to Be Tested
