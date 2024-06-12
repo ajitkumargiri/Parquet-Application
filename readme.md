@@ -1,3 +1,47 @@
+Open sidebar
+ChatGPT
+
+Write a message to recruiter and team lead for a vecency, need to refer one of my friends for this vecency project owner 
+ChatGPT
+Certainly! Here’s a template for referring your friend for a vacancy:
+
+Subject: Referral for [Job Title] Position – [Friend’s Name]
+
+Dear [Recruiter’s Name] and [Team Lead’s Name],
+
+I hope this message finds you well.
+
+I am writing to refer my friend, [Friend’s Name], for the [Job Title] position currently open on your team. I have known [Friend’s Name] for [number] years and have had the opportunity to work with them on several projects, where they consistently demonstrated exceptional skills in [relevant skills/areas].
+
+[Friend’s Name] has a proven track record of [specific achievements or experiences related to the job], and I believe they would be a great asset to your team. Their expertise in [specific skills or technologies] aligns perfectly with the requirements of the role, and their ability to [specific ability, e.g., solve complex problems, work collaboratively, manage projects efficiently] would contribute significantly to the success of your projects.
+
+I have attached [Friend’s Name]’s resume for your review. Please feel free to reach out to them directly at [Friend’s Contact Information] or let me know if you need any additional information.
+
+Thank you for considering this referral. I am confident that [Friend’s Name] would make a valuable addition to the team.
+
+Best regards,
+
+[Your Full Name]
+[Your Job Title]
+[Your Contact Information]
+[Your LinkedIn Profile or Other Professional Social Media, if applicable]
+
+Feel free to adjust the details to better fit your specific situation.
+
+
+
+
+
+
+
+Message ChatGPT
+
+ChatGPT can make mistakes. Check important info.
+ChatGPT
+
+
+
+
 To create a fake object with all attributes populated, including nested classes, list attributes, and various data types including enums, you need a more comprehensive approach. Here's an example of how you can extend the `FakeObjectCreator` utility to handle these cases:
 
 ### Example Classes
