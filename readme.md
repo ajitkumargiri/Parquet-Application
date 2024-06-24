@@ -1,3 +1,138 @@
+Feature: Web Application Testing
+
+  Background:
+    Given the browser is open
+    And the base URL is set to "http://example.com"
+
+  Scenario: User logs in
+    Given the user is on the login page
+    When the user enters "username" into the "username" field
+    And the user enters "password" into the "password" field
+    And the user clicks the "login" button
+    Then the user should be redirected to the dashboard
+    And the page title should be "Dashboard"
+
+  Scenario: User logs out
+    Given the user is logged in
+    When the user clicks the "logout" button
+    Then the user should be redirected to the login page
+    And the page title should be "Login"
+
+  Scenario: User searches for an item
+    Given the user is on the search page
+    When the user enters "search query" into the "search" field
+    And the user clicks the "search" button
+    Then the search results should be displayed
+    And the results should contain "expected result"
+
+  Scenario: User adds an item to the cart
+    Given the user is on the product page for "product name"
+    When the user clicks the "add to cart" button
+    Then the cart should contain "product name"
+
+  Scenario: User checks out
+    Given the user is on the cart page
+    When the user clicks the "checkout" button
+    And the user enters "shipping address" into the "address" field
+    And the user enters "payment information" into the "payment" field
+    And the user clicks the "confirm" button
+    Then the order confirmation should be displayed
+    And the confirmation message should be "Order placed successfully"
+
+  Scenario: User registers
+    Given the user is on the registration page
+    When the user enters "new username" into the "username" field
+    And the user enters "new password" into the "password" field
+    And the user enters "email" into the "email" field
+    And the user clicks the "register" button
+    Then the user should be redirected to the welcome page
+    And the welcome message should be "Welcome new username"
+
+  Scenario: User resets password
+    Given the user is on the forgot password page
+    When the user enters "email" into the "email" field
+    And the user clicks the "reset password" button
+    Then a password reset email should be sent to "email"
+    And the confirmation message should be "Password reset email sent"
+
+  Scenario: User navigates to a page
+    Given the user is on the home page
+    When the user clicks the "link" link
+    Then the user should be redirected to the "target" page
+    And the page title should be "target title"
+
+  Scenario: User fills out and submits a form
+    Given the user is on the form page
+    When the user enters "text" into the "textfield" field
+    And the user selects "option" from the "dropdown" field
+    And the user checks the "checkbox" checkbox
+    And the user clicks the "submit" button
+    Then the form submission should be successful
+    And the success message should be "Form submitted successfully"
+
+  Scenario: User interacts with a modal
+    Given the user is on the modal page
+    When the user clicks the "open modal" button
+    Then the modal should be displayed
+    When the user clicks the "close modal" button
+    Then the modal should be hidden
+
+  Scenario: User interacts with a dropdown
+    Given the user is on the dropdown page
+    When the user clicks the "dropdown" button
+    Then the dropdown options should be displayed
+    When the user selects "option" from the dropdown
+    Then the selected option should be "option"
+
+  Scenario: User interacts with tabs
+    Given the user is on the tabs page
+    When the user clicks the "tab" tab
+    Then the "tab content" content should be displayed
+
+  Scenario: User views and interacts with notifications
+    Given the user is on the notifications page
+    When a notification with the message "notification message" is displayed
+    Then the user clicks the "dismiss" button
+    And the notification should be hidden
+
+  Scenario: User performs a drag and drop
+    Given the user is on the drag and drop page
+    When the user drags the "source" element to the "target" element
+    Then the "target" element should contain the "source" element
+
+  Scenario: User verifies page content
+    Given the user is on the "page" page
+    Then the page title should be "title"
+    And the "element" element should be visible
+    And the "element" element should contain "text"
+
+  Scenario: User interacts with a date picker
+    Given the user is on the date picker page
+    When the user selects "date" from the "date picker" field
+    Then the "date picker" field should contain "date"
+
+  Scenario: User uploads a file
+    Given the user is on the file upload page
+    When the user selects "file path" from the "file upload" field
+    And the user clicks the "upload" button
+    Then the file should be uploaded successfully
+    And the success message should be "File uploaded successfully"
+
+  Scenario: User downloads a file
+    Given the user is on the file download page
+    When the user clicks the "download" button
+    Then the file should be downloaded successfully
+
+  Scenario: User verifies API response
+    Given the user makes a GET request to "api/endpoint"
+    Then the response status code should be 200
+    And the response body should contain "expected data"
+
+
+
+№################
+
+
 Certainly! Here's how you can adapt the feature steps for web application testing using Playwright with Java. First, you need to set up Playwright for Java.
 
 Setting Up Playwright with Java
