@@ -1,3 +1,21 @@
+I wanted to inform you about my leave plan.
+
+I haven't been to India for the last two years, so we are planning a trip there this October.
+
+I will be working most days. Here is the detailed plan:
+
+23-Sept-2024 to 27-Sept-2024: Taking leave (5 days)
+30-Sept-2024 to 23-Oct-2024: Working from home
+24-Oct-2024 to 11-Nov-2024: Taking leave (13 days)
+
+
+
+
+
+
+
+
+
 ```code
 Open sidebar
 ChatGPT
