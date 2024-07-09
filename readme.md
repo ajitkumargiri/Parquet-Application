@@ -1,4 +1,688 @@
+
+
 ```code
+
+To create a full test framework using Spring Boot, Cucumber, and FeignClient to call an external REST API, follow these steps. The framework will be designed to interact with the external API, dynamically pass request bodies, and validate responses using JSONPath.
+
+Step 1: Create a New Spring Boot Project
+Initialize the Spring Boot Project:
+
+Use Spring Initializr to set up your project.
+Add dependencies: Spring Web, Spring Boot DevTools, Spring Boot Starter Test, Spring Cloud OpenFeign, and Lombok.
+Update pom.xml for Cucumber, Feign, and JsonPath:
+
+xml
+Copy code
+<dependencies>
+    <!-- Spring Boot dependencies -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-devtools</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Spring Cloud OpenFeign -->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-openfeign</artifactId>
+    </dependency>
+
+    <!-- Cucumber dependencies -->
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-java</artifactId>
+        <version>7.0.0</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-spring</artifactId>
+        <version>7.0.0</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit-platform-engine</artifactId>
+        <version>7.0.0</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- JsonPath dependency -->
+    <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+        <version>2.7.0</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId>
+            <version>Hoxton.SR8</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+Step 2: Configure Feign Client
+Create a Feign Client Interface:
+
+java
+Copy code
+package com.example.demo.client;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+@FeignClient(name = "apiClient", url = "${api.base.url}")
+public interface ApiClient {
+
+    @PostMapping("/data")
+    String postData(@RequestBody String requestBody);
+}
+Enable Feign Clients in the Application:
+
+java
+Copy code
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
+@SpringBootApplication
+@EnableFeignClients
+public class DemoApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+}
+Step 3: Configure Cucumber
+Create a Cucumber Test Runner:
+
+java
+Copy code
+package com.example.demo;
+
+import io.cucumber.junit.platform.engine.Cucumber;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@Cucumber
+@SelectClasspathResource("features")
+public class CucumberTestRunner {
+}
+Create Cucumber Configuration:
+
+java
+Copy code
+package com.example.demo;
+
+import io.cucumber.spring.CucumberContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@CucumberContextConfiguration
+@SpringBootTest(classes = DemoApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class CucumberSpringConfiguration {
+}
+Step 4: Write Feature File
+Create Feature File:
+
+Create a directory src/test/resources/features and add a feature file post_api.feature.
+
+gherkin
+Copy code
+Feature: Test POST API with dynamic request body
+
+Scenario Outline: Post data to the API
+    Given I have the following request body
+        """
+        {
+            "data": "<data>"
+        }
+        """
+    When I send a POST request to "<url>"
+    Then I receive a <statusCode> OK response
+    And the response body contains "<data>"
+    And the response body at "$.data" is "<data>"
+
+Examples:
+    | data         | url                | statusCode |
+    | Sample data  | ${apiBaseUrl}/data | 200        |
+    | Another data | ${apiBaseUrl}/data | 200        |
+Step 5: Write Step Definitions
+Create Step Definitions:
+
+Create a directory src/test/java/com/example/demo/steps and add the step definition file PostApiSteps.java.
+
+java
+Copy code
+package com.example.demo.steps;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.test.context.ContextConfiguration;
+
+import com.example.demo.CucumberSpringConfiguration;
+import com.example.demo.client.ApiClient;
+import com.jayway.jsonpath.JsonPath;
+
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+
+@ContextConfiguration(classes = CucumberSpringConfiguration.class)
+public class PostApiSteps {
+
+    @Autowired
+    private ApiClient apiClient;
+
+    @Value("${apiBaseUrl}")
+    private String apiBaseUrl;
+
+    private String response;
+    private String requestBody;
+
+    @Given("I have the following request body")
+    public void i_have_the_following_request_body(String requestBody) {
+        this.requestBody = requestBody;
+    }
+
+    @When("I send a POST request to {string}")
+    public void i_send_a_post_request_to(String url) {
+        response = apiClient.postData(requestBody);
+    }
+
+    @Then("I receive a {int} OK response")
+    public void i_receive_a_ok_response(int statusCode) {
+        // Assuming the API client throws an exception on non-2xx responses.
+        // Actual implementation might need to capture the status code from the response.
+        assertEquals(200, statusCode);
+    }
+
+    @Then("the response body contains {string}")
+    public void the_response_body_contains(String expectedData) {
+        assertTrue(response.contains(expectedData));
+    }
+
+    @Then("the response body at {string} is {string}")
+    public void the_response_body_at_is(String jsonPath, String expectedValue) {
+        String actualValue = JsonPath.read(response, jsonPath);
+        assertEquals(expectedValue, actualValue);
+    }
+}
+Step 6: Configure Multiple Environments
+Define Base URLs in Application Properties:
+
+Create environment-specific property files like application-dev.properties and application-prod.properties.
+
+properties
+Copy code
+# application-dev.properties
+api.base.url=http://localhost:8081/api
+
+# application-prod.properties
+api.base.url=http://prod.example.com/api
+Specify Active Profile:
+
+Use the spring.profiles.active property in application.properties.
+
+properties
+Copy code
+# application.properties
+spring.profiles.active=dev
+Step 7: Running the Tests
+To run the tests with different profiles, use the following commands:
+
+sh
+Copy code
+mvn test -Dspring.profiles.active=dev
+mvn test -Dspring.profiles.active=prod
+Final Project Structure
+css
+Copy code
+src
+├── main
+│   ├── java
+│   │   └── com.example.demo
+│   │       ├── client
+│   │       │   └── ApiClient.java
+│   │       └── DemoApplication.java
+│   └── resources
+│       ├── application.properties
+│       ├── application-dev.properties
+│       └── application-prod.properties
+└── test
+    ├── java
+    │   └── com.example.demo
+    │       ├── CucumberSpringConfiguration.java
+    │       ├── CucumberTestRunner.java
+    │       └── steps
+    │           └── PostApiSteps.java
+    └── resources
+        └── features
+            └── post_api.feature
+This setup ensures that your test framework is capable of dynamically passing request bodies and validating response bodies using JSONPath, and it uses FeignClient to
+
+
+
+
+
+Request body is an object 
+ChatGPT
+If the request body is an object rather than a simple string, we need to define the object structure in the test framework. This involves creating a model class for the request and updating the Feign client, step definitions, and feature file accordingly.
+
+Step 1: Define the Request Model
+Create a model class for the request body.
+
+Request Model:
+
+java
+Copy code
+package com.example.demo.model;
+
+public class RequestData {
+    private String data;
+
+    public RequestData() {
+    }
+
+    public RequestData(String data) {
+        this.data = data;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
+}
+Step 2: Update Feign Client
+Update the Feign client to use the request model.
+
+Feign Client:
+
+java
+Copy code
+package com.example.demo.client;
+
+import com.example.demo.model.RequestData;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+@FeignClient(name = "apiClient", url = "${api.base.url}")
+public interface ApiClient {
+
+    @PostMapping("/data")
+    String postData(@RequestBody RequestData requestBody);
+}
+Step 3: Update Step Definitions
+Update the step definitions to use the request model.
+
+Step Definitions:
+
+java
+Copy code
+package com.example.demo.steps;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.example.demo.model.RequestData;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.test.context.ContextConfiguration;
+
+import com.example.demo.CucumberSpringConfiguration;
+import com.example.demo.client.ApiClient;
+import com.jayway.jsonpath.JsonPath;
+
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+
+@ContextConfiguration(classes = CucumberSpringConfiguration.class)
+public class PostApiSteps {
+
+    @Autowired
+    private ApiClient apiClient;
+
+    @Value("${apiBaseUrl}")
+    private String apiBaseUrl;
+
+    private String response;
+    private RequestData requestData;
+
+    @Given("I have the following request body")
+    public void i_have_the_following_request_body(String requestBody) {
+        this.requestData = new RequestData(requestBody);
+    }
+
+    @When("I send a POST request to {string}")
+    public void i_send_a_post_request_to(String url) {
+        response = apiClient.postData(requestData);
+    }
+
+    @Then("I receive a {int} OK response")
+    public void i_receive_a_ok_response(int statusCode) {
+        // Assuming the API client throws an exception on non-2xx responses.
+        // Actual implementation might need to capture the status code from the response.
+        assertEquals(200, statusCode);
+    }
+
+    @Then("the response body contains {string}")
+    public void the_response_body_contains(String expectedData) {
+        assertTrue(response.contains(expectedData));
+    }
+
+    @Then("the response body at {string} is {string}")
+    public void the_response_body_at_is(String jsonPath, String expectedValue) {
+        String actualValue = JsonPath.read(response, jsonPath);
+        assertEquals(expectedValue, actualValue);
+    }
+}
+Step 4: Update Feature File
+Update the feature file to reflect the object structure.
+
+Feature File:
+
+gherkin
+Copy code
+Feature: Test POST API with dynamic request body
+
+Scenario Outline: Post data to the API
+    Given I have the following request body
+        """
+        {
+            "data": "<data>"
+        }
+        """
+    When I send a POST request to "<url>"
+    Then I receive a <statusCode> OK response
+    And the response body contains "<data>"
+    And the response body at "$.data" is "<data>"
+
+Examples:
+    | data         | url                | statusCode |
+    | Sample data  | ${apiBaseUrl}/data | 200        |
+    | Another data | ${apiBaseUrl}/data | 200        |
+Step 5: Configure Multiple Environments
+Define Base URLs in Application Properties:
+
+Create environment-specific property files like application-dev.properties and application-prod.properties.
+
+properties
+Copy code
+# application-dev.properties
+api.base.url=http://localhost:8081/api
+
+# application-prod.properties
+api.base.url=http://prod.example.com/api
+Specify Active Profile:
+
+Use the spring.profiles.active property in application.properties.
+
+properties
+Copy code
+# application.properties
+spring.profiles.active=dev
+Step 6: Running the Tests
+To run the tests with different profiles, use the following commands:
+
+sh
+Copy code
+mvn test -Dspring.profiles.active=dev
+mvn test -Dspring.profiles.active=prod
+Final Project Structure
+css
+Copy code
+src
+├── main
+│   ├── java
+│   │   └── com.example.demo
+│   │       ├── client
+│   │       │   └── ApiClient.java
+│   │       ├── model
+│   │       │   └── RequestData.java
+│   │       └── DemoApplication.java
+│   └── resources
+│       ├── application.properties
+│       ├── application-dev.properties
+│       └── application-prod.properties
+└── test
+    ├── java
+    │   └── com.example.demo
+    │       ├── CucumberSpringConfiguration.java
+    │       ├── CucumberTestRunner.java
+    │       └── steps
+    │           └── PostApiSteps.java
+    └── resources
+        └── features
+            └── post_api.feature
+This setup ensures that your test framework is capable of dynamically passing request bodies as objects and validating response bodies using JSONPath. The framework uses FeignClient to call the external API and is configured to run in multiple environments by leveraging Spring's profile mechanism.
+
+
+
+
+
+Best way to set all test cases and test scenario, set of ts for sanity test and all tc for regression 
+ChatGPT
+To organize your test cases and scenarios effectively for both sanity and regression testing, you can leverage Cucumber's tagging feature. Tags help you categorize tests and control which sets of tests to run, making it easier to manage your sanity and regression test suites.
+
+Step 1: Define Tags in Feature Files
+Feature File with Tags:
+
+Add tags to your feature scenarios to indicate whether they belong to sanity or regression tests.
+
+gherkin
+Copy code
+@sanity @regression
+Feature: Test POST API with dynamic request body
+
+@sanity
+Scenario Outline: Sanity test case
+    Given I have the following request body
+        """
+        {
+            "data": "<data>"
+        }
+        """
+    When I send a POST request to "<url>"
+    Then I receive a <statusCode> OK response
+    And the response body contains "<data>"
+    And the response body at "$.data" is "<data>"
+
+@regression
+Scenario Outline: Regression test case
+    Given I have the following request body
+        """
+        {
+            "data": "<data>"
+        }
+        """
+    When I send a POST request to "<url>"
+    Then I receive a <statusCode> OK response
+    And the response body contains "<data>"
+    And the response body at "$.data" is "<data>"
+
+Examples:
+    | data         | url                | statusCode |
+    | Sample data  | ${apiBaseUrl}/data | 200        |
+    | Another data | ${apiBaseUrl}/data | 200        |
+Step 2: Configure Cucumber Options for Tags
+Test Runner Configuration:
+
+Update your test runner to allow running tests based on tags. You can create multiple test runners if needed.
+
+java
+Copy code
+package com.example.demo;
+
+import io.cucumber.junit.platform.engine.Cucumber;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.IncludeTags;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@Cucumber
+@SelectClasspathResource("features")
+@IncludeTags("sanity")
+public class SanityTestRunner {
+}
+
+@Suite
+@Cucumber
+@SelectClasspathResource("features")
+@IncludeTags("regression")
+public class RegressionTestRunner {
+}
+Step 3: Run Tests with Tags
+You can run the tests with specific tags using the corresponding test runner classes. This allows you to selectively execute sanity or regression tests.
+
+Step 4: Organize Test Scenarios
+Example Feature File Organization:
+
+gherkin
+Copy code
+@sanity @regression
+Feature: Test POST API with dynamic request body
+
+@sanity
+Scenario Outline: Basic POST request validation
+    Given I have the following request body
+        """
+        {
+            "data": "<data>"
+        }
+        """
+    When I send a POST request to "<url>"
+    Then I receive a <statusCode> OK response
+    And the response body contains "<data>"
+    And the response body at "$.data" is "<data>"
+
+@regression
+Scenario Outline: Extended POST request validation
+    Given I have the following request body
+        """
+        {
+            "data": "<data>"
+        }
+        """
+    When I send a POST request to "<url>"
+    Then I receive a <statusCode> OK response
+    And the response body contains "<data>"
+    And the response body at "$.data" is "<data>"
+
+Examples:
+    | data         | url                | statusCode |
+    | Sample data  | ${apiBaseUrl}/data | 200        |
+    | Another data | ${apiBaseUrl}/data | 200        |
+Step 5: Organize Test Execution with Maven
+Maven Profile Configuration:
+
+Configure Maven profiles to execute tests with specific tags. Update your pom.xml to include profiles for sanity and regression tests.
+
+xml
+Copy code
+<profiles>
+    <profile>
+        <id>sanity</id>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.22.2</version>
+                    <configuration>
+                        <includes>
+                            <include>**/SanityTestRunner.java</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+    <profile>
+        <id>regression</id>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.22.2</version>
+                    <configuration>
+                        <includes>
+                            <include>**/RegressionTestRunner.java</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+</profiles>
+Run Tests with Maven Profiles:
+
+Execute the tests using the defined Maven profiles.
+
+sh
+Copy code
+mvn test -Psanity
+mvn test -Pregression
+Final Project Structure
+css
+Copy code
+src
+├── main
+│   ├── java
+│   │   └── com.example.demo
+│   │       ├── client
+│   │       │   └── ApiClient.java
+│   │       ├── model
+│   │       │   └── RequestData.java
+│   │       └── DemoApplication.java
+│   └── resources
+│       ├── application.properties
+│       ├── application-dev.properties
+│       └── application-prod.properties
+└── test
+    ├── java
+    │   └── com.example.demo
+    │       ├── CucumberSpringConfiguration.java
+    │       ├── SanityTestRunner.java
+    │       ├── RegressionTestRunner.java
+    │       └── steps
+    │           └── PostApiSteps.java
+    └── resources
+        └── features
+            └── post_api.feature
+By organizing your tests with tags and using different runners, you can efficiently manage sanity and regression test suites. This approach ensures that you can easily run specific sets of tests based on the context, such as a quick sanity 
+
+
+
+
+
+
 
 Here's the detailed project structure, reflecting all the necessary files and directories:
 
