@@ -1,4 +1,27 @@
 
+ChatGPT
+
+Write the subject and remarks:
+I want to asking hr to provide a document stating that my salary will increase from July 01 2024 as per new cla.
+It will help me in my mortgage process.
+As abn amro already have the cla result document.
+ChatGPT
+Subject: Request for Official Salary Increase Documentation
+
+Remarks:
+
+Dear [HR Manager's Name],
+
+I hope this message finds you well. I am writing to formally request a document stating that my salary will increase effective from July 1, 2024, as per the new Collective Labor Agreement (CLA).
+
+This document is required to support my mortgage application process with ABN AMRO, who already have the CLA result document.
+
+Your prompt assistance with this matter would be greatly appreciated.
+
+Thank you in advance for your help.
+
+
+
 
 ```code
 
