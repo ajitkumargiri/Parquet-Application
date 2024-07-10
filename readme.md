@@ -1,3 +1,36 @@
+Subject: Confirmation of 6% Salary Increase Effective July 1, 2024
+
+Dear [HR Manager's Name],
+
+I hope this message finds you well.
+
+I am writing to confirm the 6% salary increase effective from July 1, 2024, as per the new CLA agreement. This confirmation is crucial for my mortgage application process with ABN AMRO Bank, as it will significantly enhance my eligibility.
+
+Please provide an official letter or email confirming this salary adjustment, including the effective date and the new salary amount. This documentation will greatly support my application process.
+
+Thank you for your assistance and understanding. I look forward to your prompt response.
+
+Best regards,
+
+[Your Full Name]
+[Your Job Title]
+[Your Department]
+[Your Contact Information]
+
+
+
+
+
+
+Is this conversation helpful so far?
+
+
+
+
+
+
+
+
 
 
 I 
