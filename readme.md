@@ -1,4 +1,10 @@
 
+
+I 
+am in the process of applying for a mortgage with ABN AMRO Bank and I have a CLA (Conditional Loan Approval) result document that could potentially improve my eligibility for the mortgage. I would like to know if this document is intended for internal use only, or if it is permissible for me to share it with the bank as part of my mortgage application. Can you please clarify this for me?
+
+
+
 ChatGPT
 
 Write the subject and remarks:
