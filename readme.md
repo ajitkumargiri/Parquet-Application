@@ -1,5 +1,52 @@
 
 ``` code
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import javax.sql.DataSource;
+import java.util.function.Supplier;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
+
+    @Value("${azure.sql.client-id:}")
+    private String clientId;
+
+    @Bean
+    public DataSource dataSource() {
+        SQLServerDataSource dataSource = new SQLServerDataSource();
+        dataSource.setURL(databaseUrl);
+        dataSource.setAuthentication("ActiveDirectoryMSI");
+
+        // Use DefaultAzureCredential to acquire token
+        Supplier<String> accessTokenSupplier = () -> {
+            DefaultAzureCredentialBuilder credentialBuilder = new DefaultAzureCredentialBuilder();
+            if (clientId != null && !clientId.isEmpty()) {
+                credentialBuilder.managedIdentityClientId(clientId);
+            }
+            return credentialBuilder.build()
+                                    .getToken("https://database.windows.net/.default")
+                                    .block()
+                                    .getToken();
+        };
+
+        // Setting a custom access token supplier
+        dataSource.setAccessTokenCallback(accessTokenSupplier);
+
+        return dataSource;
+    }
+}
+
+
+
+
+
+
 Open sidebar
 ChatGPT
 
