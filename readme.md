@@ -1,5 +1,255 @@
 
 ``` code
+To create a full Spring Boot application that connects to an Azure SQL Server database, retrieves Employee entities, and reads them, follow these steps:
+
+1. Setup Dependencies
+In your pom.xml, include the necessary dependencies:
+
+xml
+Copy code
+<dependencies>
+    <!-- Spring Boot Starter Data JPA -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    
+    <!-- SQL Server JDBC Driver -->
+    <dependency>
+        <groupId>com.microsoft.sqlserver</groupId>
+        <artifactId>mssql-jdbc</artifactId>
+        <version>9.2.1.jre8</version>
+    </dependency>
+    
+    <!-- Azure Identity -->
+    <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-identity</artifactId>
+        <version>1.3.6</version>
+    </dependency>
+    
+    <!-- Spring Boot Starter Web -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+</dependencies>
+2. Configuration
+Create a DataSourceConfig class to configure the DataSource with Managed Identity:
+
+java
+Copy code
+import com.azure.core.credential.AccessToken;
+import com.azure.core.credential.TokenRequestContext;
+import com.azure.identity.ManagedIdentityCredential;
+import com.azure.identity.ManagedIdentityCredentialBuilder;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessToken;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessTokenCallback;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.logging.Logger;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
+
+    @Value("${azure.sql.client-id:}")
+    private String clientId;
+
+    private static final Logger logger = Logger.getLogger(DataSourceConfig.class.getName());
+
+    @Bean
+    public DataSource dataSource() {
+        SQLServerDataSource dataSource = new SQLServerDataSource();
+        dataSource.setURL(databaseUrl);
+        dataSource.setAuthentication("ActiveDirectoryMSI");
+
+        // Create ManagedIdentityCredential
+        ManagedIdentityCredential credential = new ManagedIdentityCredentialBuilder()
+            .clientId(clientId.isEmpty() ? null : clientId)
+            .build();
+
+        // Set the access token callback
+        dataSource.setAccessTokenCallback(new SQLServerAccessTokenCallback() {
+            @Override
+            public SQLServerAccessToken getAccessToken(String resource, String clientId, String authority) {
+                try {
+                    AccessToken token = credential.getToken(new TokenRequestContext().addScopes(resource + "/.default")).block();
+                    return new SQLServerAccessToken(token.getToken(), OffsetDateTime.now().plusSeconds(token.getExpiresAt().getEpochSecond() - OffsetDateTime.now().toEpochSecond()));
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to acquire the token", e);
+                }
+            }
+        });
+
+        // Test connection and log database name
+        try (Connection connection = dataSource.getConnection()) {
+            if (connection != null) {
+                String databaseName = connection.getCatalog();
+                logger.info("Connected to database: " + databaseName);
+            } else {
+                logger.severe("Connection is null");
+            }
+        } catch (SQLException e) {
+            logger.severe("Failed to get connection: " + e.getMessage());
+        }
+
+        return dataSource;
+    }
+}
+3. Define the Entity
+Create an Employee entity class:
+
+java
+Copy code
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "Employee")
+public class Employee {
+
+    @Id
+    private Long id;
+
+    private String name;
+    private String department;
+
+    // Getters and setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+}
+4. Create the Repository
+Create a Spring Data JPA repository for Employee:
+
+java
+Copy code
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+}
+5. Create the Service
+Create a service to handle business logic:
+
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class EmployeeService {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    public List<Employee> getAllEmployees() {
+        return employeeRepository.findAll();
+    }
+}
+6. Create the Controller
+Create a REST controller to expose an API:
+
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/employees")
+public class EmployeeController {
+
+    @Autowired
+    private EmployeeService employeeService;
+
+    @GetMapping
+    public List<Employee> getEmployees() {
+        return employeeService.getAllEmployees();
+    }
+}
+7. Application Properties
+Configure your application.properties file:
+
+properties
+Copy code
+spring.datasource.url=jdbc:sqlserver://<your-sql-server-name>.database.windows.net:1433;database=<your-database-name>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+# Managed Identity client ID (optional for user-assigned managed identity)
+azure.sql.client-id=<your-managed-identity-client-id>
+8. Main Application Class
+Ensure your main application class is set up:
+
+java
+Copy code
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
+@SpringBootApplication
+@EnableJpaRepositories
+public class YourApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(YourApplication.class, args);
+    }
+}
+9. Deploy and Test
+Deploy your Spring Boot application to your Azure environment. Ensure that your Managed Identity has the necessary permissions and that your SQL Database is correctly configured.
+
+By following these steps, you create a complete Spring Boot application that connects to an Azure SQL Server database, retrieves employee data, and exposes it via a REST API.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.identity.ManagedIdentityCredential;
