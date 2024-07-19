@@ -36,6 +36,60 @@ public class DataSourceConfig {
         // Set the access token callback
         dataSource.setAccessTokenCallback(new SQLServerAccessTokenCallback() {
             @Override
+            public String getAccessToken(String resource, String clientId, String authority) {
+                try {
+                    AccessToken token = credential.getToken(new TokenRequestContext().addScopes(resource + "/.default")).block(Duration.ofSeconds(30));
+                    return token.getToken();
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to acquire the token", e);
+                }
+            }
+        });
+
+        return dataSource;
+    }
+}
+
+
+
+
+
+import com.azure.core.credential.AccessToken;
+import com.azure.core.credential.TokenRequestContext;
+import com.azure.identity.ManagedIdentityCredential;
+import com.azure.identity.ManagedIdentityCredentialBuilder;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessTokenCallback;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import java.time.Duration;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
+
+    @Value("${azure.sql.client-id:}")
+    private String clientId;
+
+    @Bean
+    public DataSource dataSource() {
+        SQLServerDataSource dataSource = new SQLServerDataSource();
+        dataSource.setURL(databaseUrl);
+        dataSource.setAuthentication("ActiveDirectoryMSI");
+
+        // Create ManagedIdentityCredential
+        ManagedIdentityCredential credential = new ManagedIdentityCredentialBuilder()
+            .clientId(clientId.isEmpty() ? null : clientId)
+            .build();
+
+        // Set the access token callback
+        dataSource.setAccessTokenCallback(new SQLServerAccessTokenCallback() {
+            @Override
             public String getAccessToken(String resource, String clientId) {
                 try {
                     AccessToken token = credential.getToken(new TokenRequestContext().addScopes(resource + "/.default")).block(Duration.ofSeconds(30));
