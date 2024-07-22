@@ -1,5 +1,76 @@
 
 ``` code
+package com.example.azuresql;
+
+import com.azure.identity.ManagedIdentityCredential;
+import com.azure.identity.ManagedIdentityCredentialBuilder;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessToken;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessTokenCallback;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.logging.Logger;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
+
+    @Value("${azure.sql.client-id:}")
+    private String clientId;
+
+    private static final Logger logger = Logger.getLogger(DataSourceConfig.class.getName());
+
+    @Bean
+    public DataSource dataSource() {
+        SQLServerDataSource dataSource = new SQLServerDataSource();
+        dataSource.setURL(databaseUrl);
+        dataSource.setAuthentication("ActiveDirectoryMSI");
+
+        // Create ManagedIdentityCredential
+        ManagedIdentityCredential credential = new ManagedIdentityCredentialBuilder()
+            .clientId(clientId.isEmpty() ? null : clientId)
+            .build();
+
+        // Create and use the token cache
+        TokenCache tokenCache = new TokenCache();
+
+        // Set the access token callback
+        dataSource.setAccessTokenCallback(new SQLServerAccessTokenCallback() {
+            @Override
+            public SQLServerAccessToken getAccessToken(String resource, String clientId, String authority) {
+                try {
+                    String token = tokenCache.getToken(credential, resource);
+                    return new SQLServerAccessToken(token, OffsetDateTime.now().plusHours(1));
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to acquire the token", e);
+                }
+            }
+        });
+
+        // Test connection and log database name
+        try (Connection connection = dataSource.getConnection()) {
+            if (connection != null) {
+                String databaseName = connection.getCatalog();
+                logger.info("Connected to database: " + databaseName);
+            } else {
+                logger.severe("Connection is null");
+            }
+        } catch (SQLException e) {
+            logger.severe("Failed to get connection: " + e.getMessage());
+        }
+
+        return dataSource;
+    }
+}
+
+
 To create a full Spring Boot application that connects to an Azure SQL Server database, retrieves Employee entities, and reads them, follow these steps:
 
 1. Setup Dependencies
