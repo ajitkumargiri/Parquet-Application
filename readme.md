@@ -1,6 +1,98 @@
 
 ``` code
 
+# DataSource configuration
+spring.datasource.url=jdbc:sqlserver://<your-sql-server-name>.database.windows.net:1433;database=<your-database-name>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+# Hibernate configuration
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServer2012Dialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Azure SPN credentials
+azure.client-id=<your-client-id>
+azure.client-secret=<your-client-secret>
+azure.tenant-id=<your-tenant-id>
+
+package com.example.azuresql;
+
+import com.azure.identity.ClientSecretCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.core.credential.TokenRequestContext;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessToken;
+import com.microsoft.sqlserver.jdbc.SQLServerAccessTokenCallback;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.OffsetDateTime;
+import java.util.logging.Logger;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String databaseUrl;
+
+    @Value("${azure.client-id}")
+    private String clientId;
+
+    @Value("${azure.client-secret}")
+    private String clientSecret;
+
+    @Value("${azure.tenant-id}")
+    private String tenantId;
+
+    private static final Logger logger = Logger.getLogger(DataSourceConfig.class.getName());
+
+    @Bean
+    public DataSource dataSource() {
+        SQLServerDataSource dataSource = new SQLServerDataSource();
+        dataSource.setURL(databaseUrl);
+        dataSource.setAuthentication("ActiveDirectoryServicePrincipal");
+
+        // Create ClientSecretCredential
+        ClientSecretCredential credential = new ClientSecretCredentialBuilder()
+            .clientId(clientId)
+            .clientSecret(clientSecret)
+            .tenantId(tenantId)
+            .build();
+
+        // Set the access token callback
+        dataSource.setAccessTokenCallback(new SQLServerAccessTokenCallback() {
+            @Override
+            public SQLServerAccessToken getAccessToken(String resource, String clientId, String authority) {
+                try {
+                    String token = credential.getToken(new TokenRequestContext().addScopes(resource + "/.default")).block().getToken();
+                    return new SQLServerAccessToken(token, OffsetDateTime.now().plusHours(1));
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to acquire the token", e);
+                }
+            }
+        });
+
+        // Test connection and log database name
+        try (Connection connection = dataSource.getConnection()) {
+            if (connection != null) {
+                String databaseName = connection.getCatalog();
+                logger.info("Connected to database: " + databaseName);
+            } else {
+                logger.severe("Connection is null");
+            }
+        } catch (SQLException e) {
+            logger.severe("Failed to get connection: " + e.getMessage());
+        }
+
+        return dataSource;
+    }
+}
+
 package com.example.azuresql;
 
 import com.azure.identity.DefaultAzureCredential;
