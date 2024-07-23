@@ -1,4 +1,255 @@
 ```code
+integrate Extent Reports with your Spring Boot and Cucumber project, you'll need to add the necessary dependencies, configure the Extent Reports, and update your step definitions to log test results. Here are the steps to set this up:
+
+Step 1: Add Dependencies
+Add the following dependencies to your pom.xml:
+
+xml
+Copy code
+<dependencies>
+    <!-- Existing dependencies... -->
+    
+    <!-- Extent Reports -->
+    <dependency>
+        <groupId>com.aventstack</groupId>
+        <artifactId>extentreports</artifactId>
+        <version>5.0.9</version>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-picocontainer</artifactId>
+        <version>${cucumber.version}</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+Step 2: Configure Extent Reports
+Create an ExtentReportManager class to manage the Extent Reports setup:
+
+ExtentReportManager.java
+
+java
+Copy code
+package com.example.api.report;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.reporter.ExtentHtmlReporter;
+
+public class ExtentReportManager {
+    private static ExtentReports extent;
+    private static ExtentTest test;
+
+    public static ExtentReports getInstance() {
+        if (extent == null) {
+            ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter("extent-reports.html");
+            extent = new ExtentReports();
+            extent.attachReporter(htmlReporter);
+        }
+        return extent;
+    }
+
+    public static ExtentTest createTest(String testName) {
+        test = getInstance().createTest(testName);
+        return test;
+    }
+
+    public static ExtentTest getTest() {
+        return test;
+    }
+
+    public static void flush() {
+        if (extent != null) {
+            extent.flush();
+        }
+    }
+}
+Step 3: Update Cucumber Test Suite
+Modify the CucumberTestSuite to initialize the Extent Reports and flush the reports after the tests:
+
+CucumberTestSuite.java
+
+java
+Copy code
+package com.example.api;
+
+import com.example.api.report.ExtentReportManager;
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.IncludeTags;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
+import io.cucumber.junit.platform.engine.Constants;
+
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com.example.api.stepdefs")
+public class CucumberTestSuite {
+
+    @BeforeSuite
+    public static void setup() {
+        ExtentReportManager.getInstance();
+    }
+
+    @AfterSuite
+    public static void tearDown() {
+        ExtentReportManager.flush();
+    }
+}
+Step 4: Update Step Definitions
+Update your step definitions to log to the Extent Reports:
+
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.aventstack.extentreports.ExtentTest;
+import com.example.api.model.Record;
+import com.example.api.report.ExtentReportManager;
+import com.example.api.repository.CosmosRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+import java.util.Optional;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Response response;
+    private Long id;
+    private ExtentTest test;
+
+    @Given("I create a record with id {long} and data {string}")
+    public void i_create_a_record_with_id_and_data(Long id, String data) {
+        test = ExtentReportManager.createTest("Create a record with id " + id);
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+
+        test.info("Record created with id: " + id + " and data: " + data);
+    }
+
+    @Then("the record with id {long} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(Long id, DataTable dataTable) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        test.info("Record retrieved from database with id: " + id);
+
+        try {
+            String recordJson = objectMapper.writeValueAsString(record);
+
+            Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+            for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+                String jsonPath = entry.getKey();
+                String expectedValue = entry.getValue();
+                String actualValue = JsonPath.read(recordJson, jsonPath).toString();
+                assertThat(actualValue, is(expectedValue));
+                test.info("Validated JSON path: " + jsonPath + ", expected: " + expectedValue + ", actual: " + actualValue);
+            }
+        } catch (Exception e) {
+            test.fail("Failed to convert record to JSON");
+            throw new RuntimeException("Failed to convert record to JSON", e);
+        }
+    }
+
+    @When("I update the record with id {long} to new data {string}")
+    public void i_update_the_record_with_id_to_new_data(Long id, String newData) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        record.setData(newData);
+
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .put("/api/record/" + id);
+
+        test.info("Record updated with id: " + id + " to new data: " + newData);
+    }
+
+    @When("I delete the record with id {long}")
+    public void i_delete_the_record_with_id(Long id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+        test.info("Record with id: " + id + " deleted");
+    }
+
+    @Then("the record with id {long} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(Long id) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record should not exist in the database", optionalRecord.isEmpty());
+        test.info("Verified record with id: " + id + " does not exist in the database");
+    }
+
+    @After
+    public void cleanup() {
+        if (id != null) {
+            cosmosRepository.deleteById(id);
+        }
+        ExtentReportManager.flush();
+    }
+}
+Step 5: Update Cucumber Configuration
+To ensure that the Extent Reports are integrated smoothly, you might want to update your Cucumber runner to ensure proper setup and teardown.
+
+Running the Tests with Extent Reports
+After configuring everything, you can run your tests as before using Maven commands. The Extent Report will be generated in the project's root directory as extent-reports.html.
+
+bash
+Copy code
+mvn test -Psanity
+mvn test -Pregression
+mvn test -Psmoke
+Summary
+Extent Report Manager: Manages the setup and teardown of Extent Reports.
+Step Definitions: Updated to log steps and assertions to Extent Reports.
+Cucumber Test Suite: Ensures that Extent Reports are initialized and flushed properly.
+Running Tests: Use Maven commands to run your tests and generate Extent Reports.
+With this setup, you will be able to generate detailed HTML reports for your Cucumber tests using Extent Reports.
+
+
+
+
+
+
+
+
+
+
+ChatGPT can make
+
+
+
+
 Sure, I'll provide the complete application for API automation testing using Spring Boot, Cucumber, and integration with Azure Cosmos DB. This application will include the following components:
 
 Spring Boot Application
