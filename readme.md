@@ -1,4 +1,164 @@
 ```code
+To run tests based on multiple tags and simplify the command to mvn test -Dsanity, we can utilize the Maven properties and @IncludeTags annotations more effectively.
+
+Step 1: Modify the Test Suite to Include Multiple Tags
+Update the test suite to include multiple tags by adding configuration parameters and IncludeTags.
+
+CucumberTestSuite.java
+
+java
+Copy code
+package com.example.api;
+
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.IncludeTags;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
+import io.cucumber.junit.platform.engine.Constants;
+
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com.example.api.stepdefs")
+public class CucumberTestSuite {
+}
+Step 2: Update the pom.xml to Handle Multiple Tags
+Ensure the maven-surefire-plugin is configured to accept and pass system properties for tags.
+
+xml
+Copy code
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://www.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>api-testing</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <junit.jupiter.version>5.8.2</junit.jupiter.version>
+        <cucumber.version>7.0.0</cucumber.version>
+    </properties>
+
+    <dependencies>
+        <!-- Cucumber Dependencies -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-spring</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
+
+        <!-- JUnit 5 Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Test Dependency -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Surefire Plugin for Running Tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+Step 3: Define Profiles in pom.xml for Different Tags
+Add profiles for different tags in your pom.xml.
+
+xml
+Copy code
+<profiles>
+    <profile>
+        <id>sanity</id>
+        <properties>
+            <cucumber.filter.tags>@sanity</cucumber.filter.tags>
+        </properties>
+    </profile>
+    <profile>
+        <id>regression</id>
+        <properties>
+            <cucumber.filter.tags>@regression</cucumber.filter.tags>
+        </properties>
+    </profile>
+    <profile>
+        <id>smoke</id>
+        <properties>
+            <cucumber.filter.tags>@smoke</cucumber.filter.tags>
+        </properties>
+    </profile>
+</profiles>
+Step 4: Running Tests with Maven
+You can now run the tests using the specific profiles.
+
+To run the sanity tests:
+
+bash
+Copy code
+mvn test -Psanity
+To run the regression tests:
+
+bash
+Copy code
+mvn test -Pregression
+To run the smoke tests:
+
+bash
+Copy code
+mvn test -Psmoke
+Summary
+Test Suite Configuration: Updated CucumberTestSuite.java to remove specific tag configurations and rely on external parameters.
+Surefire Plugin: Configured maven-surefire-plugin to pass the cucumber.filter.tags system property.
+Profiles in pom.xml: Added Maven profiles to set the cucumber.filter.tags property for different test categories.
+Running Tests: Use Maven commands with profiles to run specific sets of tests.
+
+
+
+
+
+
+
+
+
+
+
+
 
 suite, we need to appropriately tag our scenarios in the feature file. We will write three test cases, with one designated as the sanity check.
 
