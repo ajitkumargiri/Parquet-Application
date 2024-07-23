@@ -1,4 +1,395 @@
 ```code
+
+suite, we need to appropriately tag our scenarios in the feature file. We will write three test cases, with one designated as the sanity check.
+
+Updated Feature File
+api.feature
+
+gherkin
+Copy code
+Feature: API testing
+
+  @sanity @regression
+  Scenario: Create and validate a record
+    Given I create a record with id 1 and data "sample data"
+    Then the record with id 1 should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 1            |
+      | $.data         | sample data  |
+
+  @regression
+  Scenario: Update and validate a record
+    Given I create a record with id 3 and data "initial data"
+    When I update the record with id 3 to new data "updated data"
+    Then the record with id 3 should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 3            |
+      | $.data         | updated data |
+
+  @regression
+  Scenario: Delete a record
+    Given I create a record with id 2 and data "test data"
+    When I delete the record with id 2
+    Then the record with id 2 should not exist in the database
+Step Definitions
+Here are the corresponding step definitions:
+
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.example.api.model.Record;
+import com.example.api.repository.CosmosRepository;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+import java.util.Optional;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    private Response response;
+    private long id;
+
+    @Given("I create a record with id {long} and data {string}")
+    public void i_create_a_record_with_id_and_data(long id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {long} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(long id, DataTable dataTable) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        String recordJson = JsonPath.parse(record).jsonString();
+
+        Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+        for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+            String jsonPath = entry.getKey();
+            String expectedValue = entry.getValue();
+            String actualValue = JsonPath.read(recordJson, jsonPath).toString();
+            assertThat(actualValue, is(expectedValue));
+        }
+    }
+
+    @When("I update the record with id {long} to new data {string}")
+    public void i_update_the_record_with_id_to_new_data(long id, String newData) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        record.setData(newData);
+
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .put("/api/record/" + id);
+    }
+
+    @When("I delete the record with id {long}")
+    public void i_delete_the_record_with_id(long id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {long} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(long id) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record should not exist in the database", optionalRecord.isEmpty());
+    }
+
+    @After
+    public void cleanup() {
+        if (id != 0) {
+            cosmosRepository.deleteById(id);
+        }
+    }
+}
+Running Tests with Tags
+To run the tests using tags, you can configure your test runner.
+
+CucumberTest.java
+
+java
+Copy code
+package com.example.api;
+
+import org.junit.runner.RunWith;
+import io.cucumber.junit.Cucumber;
+import io.cucumber.junit.CucumberOptions;
+
+@RunWith(Cucumber.class)
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = "com.example.api.stepdefs",
+    tags = "@sanity"  // Use this to run sanity tests
+)
+public class CucumberSanityTest {
+}
+
+@RunWith(Cucumber.class)
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = "com.example.api.stepdefs",
+    tags = "@regression"  // Use this to run regression tests
+)
+public class CucumberRegressionTest {
+}
+Explanation
+Feature File:
+
+Scenario 1: Tagged with @sanity and @regression. This scenario will run in both sanity and regression suites.
+Scenario 2: Tagged with @regression. This scenario will only run in the regression suite.
+Scenario 3: Tagged with @regression. This scenario will only run in the regression suite.
+Step Definitions:
+
+Provided methods for creating, updating, deleting, and validating records in Cosmos DB.
+Ensured cleanup after each test to maintain a clean state.
+Cucumber Test Runners:
+
+CucumberSanityTest: Configured to run scenarios tagged with @sanity.
+CucumberRegressionTest: Configured to run scenarios tagged with @regression.
+By running CucumberSanityTest, only the scenarios tagged with @sanity will execute. Running CucumberRegressionTest will execute all scenarios tagged with @regression. This setup allows you to manage different suites effectively.
+
+
+
+
+
+Unsupported operation exception jsonpath can not convert to json
+ChatGPT
+The issue arises because JSONPath can't directly parse and convert a Java object to JSON. We need to explicitly convert the Record object to a JSON string before using JSONPath. This can be achieved using a library like Jackson to handle the conversion.
+
+Let's integrate Jackson to convert the Record object to JSON.
+
+Update Step Definitions to Use Jackson for Conversion
+First, add the Jackson dependency to your pom.xml if it's not already included:
+
+xml
+Copy code
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+</dependency>
+Then, update the step definitions to use Jackson for converting the Record object to a JSON string.
+
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.example.api.model.Record;
+import com.example.api.repository.CosmosRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+import java.util.Optional;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Response response;
+    private long id;
+
+    @Given("I create a record with id {long} and data {string}")
+    public void i_create_a_record_with_id_and_data(long id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {long} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(long id, DataTable dataTable) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+
+        try {
+            String recordJson = objectMapper.writeValueAsString(record);
+
+            Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+            for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+                String jsonPath = entry.getKey();
+                String expectedValue = entry.getValue();
+                String actualValue = JsonPath.read(recordJson, jsonPath).toString();
+                assertThat(actualValue, is(expectedValue));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert record to JSON", e);
+        }
+    }
+
+    @When("I update the record with id {long} to new data {string}")
+    public void i_update_the_record_with_id_to_new_data(long id, String newData) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        record.setData(newData);
+
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .put("/api/record/" + id);
+    }
+
+    @When("I delete the record with id {long}")
+    public void i_delete_the_record_with_id(long id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {long} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(long id) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record should not exist in the database", optionalRecord.isEmpty());
+    }
+
+    @After
+    public void cleanup() {
+        if (id != 0) {
+            cosmosRepository.deleteById(id);
+        }
+    }
+}
+Explanation
+Jackson Dependency: Ensure Jackson is included in your pom.xml for JSON conversion.
+ObjectMapper: Autowire ObjectMapper to convert the Record object to JSON.
+Conversion to JSON: In the @Then step, convert the Record object to a JSON string using objectMapper.writeValueAsString(record) before using JSONPath to validate the fields.
+Updated Feature File
+Make sure the feature file is correctly tagged and structured:
+
+api.feature
+
+gherkin
+Copy code
+Feature: API testing
+
+  @sanity @regression
+  Scenario: Create and validate a record
+    Given I create a record with id 1 and data "sample data"
+    Then the record with id 1 should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 1            |
+      | $.data         | sample data  |
+
+  @regression
+  Scenario: Update and validate a record
+    Given I create a record with id 3 and data "initial data"
+    When I update the record with id 3 to new data "updated data"
+    Then the record with id 3 should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 3            |
+      | $.data         | updated data |
+
+  @regression
+  Scenario: Delete a record
+    Given I create a record with id 2 and data "test data"
+    When I delete the record with id 2
+    Then the record with id 2 should not exist in the database
+Running Tests with Tags
+Ensure your Cucumber test runners are configured properly to run tests based on tags:
+
+CucumberSanityTest.java
+
+java
+Copy code
+package com.example.api;
+
+import org.junit.runner.RunWith;
+import io.cucumber.junit.Cucumber;
+import io.cucumber.junit.CucumberOptions;
+
+@RunWith(Cucumber.class)
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = "com.example.api.stepdefs",
+    tags = "@sanity"  // Run sanity tests
+)
+public class CucumberSanityTest {
+}
+CucumberRegressionTest.java
+
+java
+Copy code
+package com.example.api;
+
+import org.junit.runner.RunWith;
+import io.cucumber.junit.Cucumber;
+import io.cucumber.junit.CucumberOptions;
+
+@RunWith(Cucumber.class)
+@CucumberOptions(
+    features = "src/test/resources/features",
+    glue = "com.example.api.stepdefs",
+    tags = "@regression"  // Run regression tests
+)
+public class CucumberRegressionTest {
+}
+By running CucumberSanityTest, only the scenarios tagged with @sanity will execute. Running CucumberRegressionTest will execute all scenarios tagged with @regression. This setup allows you to manage different test suites effectively.
+
+
+
+
+
+
+
+
+
+
+ChatGPT can make mistakes. 
+
+
 package com.example.api.stepdefs;
 
 import com.example.api.model.Record;
