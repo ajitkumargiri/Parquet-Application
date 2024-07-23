@@ -1,4 +1,48 @@
 ```code
+package com.example.demo.config;
+
+import com.azure.identity.ClientSecretCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String url;
+
+    @Value("${spring.datasource.username}")
+    private String clientId;
+
+    @Value("${spring.datasource.password}")
+    private String clientSecret;
+
+    @Value("${azure.tenant-id}")
+    private String tenantId;
+
+    @Bean
+    public DataSource dataSource() {
+        ClientSecretCredential credential = new ClientSecretCredentialBuilder()
+                .clientId(clientId)
+                .clientSecret(clientSecret)
+                .tenantId(tenantId)
+                .build();
+
+        SQLServerDataSource dataSource = new SQLServerDataSource();
+        dataSource.setURL(url);
+        dataSource.setAccessToken(credential.getToken().block().getToken());
+
+        return dataSource;
+    }
+}
+
+
+
 integrate Extent Reports with your Spring Boot and Cucumber project, you'll need to add the necessary dependencies, configure the Extent Reports, and update your step definitions to log test results. Here are the steps to set this up:
 
 Step 1: Add Dependencies
