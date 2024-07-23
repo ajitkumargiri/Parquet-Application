@@ -1,5 +1,465 @@
 
 ``` code
+Open sidebar
+ChatGPT
+
+Create full application for api automation testing using spring boot cucumber. Use tag for running sanity and regression.
+Need to validate record from azure cosmos db. After each test delete the records.
+Call post api validate response 
+Retrieve records from cosmos db 
+Validate record.
+Validate record using jsonpath and value from feature file.
+Then clean up 
+ChatGPT
+Creating a full application for API automation testing using Spring Boot and Cucumber involves several steps. Here's a structured approach to building this application, including validating records from Azure Cosmos DB, using tags for running sanity and regression tests, and cleaning up records after each test.
+
+1. Setting Up the Project
+Step 1: Initialize the Spring Boot Project
+You can create a new Spring Boot project using Spring Initializr. Add the following dependencies:
+
+Spring Web
+Spring Data Cosmos DB
+Cucumber
+TestNG or JUnit
+Spring Boot Starter Test
+RestAssured
+Step 2: Project Structure
+Here is an example project structure:
+
+lua
+Copy code
+src
+|-- main
+|   |-- java
+|       |-- com.example.api
+|           |-- Application.java
+|           |-- controller
+|           |   |-- ApiController.java
+|           |-- service
+|           |   |-- ApiService.java
+|           |-- repository
+|           |   |-- CosmosRepository.java
+|           |-- model
+|               |-- Record.java
+|-- test
+    |-- java
+        |-- com.example.api
+            |-- CucumberTestRunner.java
+            |-- stepdefs
+            |   |-- ApiStepDefs.java
+            |-- feature
+                |-- api.feature
+2. Implementing the Application
+Step 3: Create the Spring Boot Application
+Application.java
+
+java
+Copy code
+package com.example.api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+Step 4: Create the Model
+Record.java
+
+java
+Copy code
+package com.example.api.model;
+
+import com.azure.spring.data.cosmos.core.mapping.Container;
+import com.azure.spring.data.cosmos.core.mapping.PartitionKey;
+import org.springframework.data.annotation.Id;
+
+@Container(containerName = "records")
+public class Record {
+    @Id
+    private String id;
+    @PartitionKey
+    private String partitionKey;
+    private String data;
+
+    // getters and setters
+}
+Step 5: Create the Repository
+CosmosRepository.java
+
+java
+Copy code
+package com.example.api.repository;
+
+import com.azure.spring.data.cosmos.repository.CosmosRepository;
+import com.example.api.model.Record;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CosmosRepository extends CosmosRepository<Record, String> {
+}
+Step 6: Create the Service
+ApiService.java
+
+java
+Copy code
+package com.example.api.service;
+
+import com.example.api.model.Record;
+import com.example.api.repository.CosmosRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class ApiService {
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    public Record createRecord(Record record) {
+        return cosmosRepository.save(record);
+    }
+
+    public Optional<Record> getRecord(String id) {
+        return cosmosRepository.findById(id);
+    }
+
+    public void deleteRecord(String id) {
+        cosmosRepository.deleteById(id);
+    }
+}
+Step 7: Create the Controller
+ApiController.java
+
+java
+Copy code
+package com.example.api.controller;
+
+import com.example.api.model.Record;
+import com.example.api.service.ApiService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api")
+public class ApiController {
+    @Autowired
+    private ApiService apiService;
+
+    @PostMapping("/record")
+    public ResponseEntity<Record> createRecord(@RequestBody Record record) {
+        return ResponseEntity.ok(apiService.createRecord(record));
+    }
+
+    @GetMapping("/record/{id}")
+    public ResponseEntity<Record> getRecord(@PathVariable String id) {
+        return apiService.getRecord(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/record/{id}")
+    public ResponseEntity<Void> deleteRecord(@PathVariable String id) {
+        apiService.deleteRecord(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+3. Implementing the Test Suite
+Step 8: Configure Cucumber
+CucumberTestRunner.java
+
+java
+Copy code
+package com.example.api;
+
+import io.cucumber.junit.Cucumber;
+import io.cucumber.junit.CucumberOptions;
+import org.junit.runner.RunWith;
+
+@RunWith(Cucumber.class)
+@CucumberOptions(
+        features = "src/test/java/com/example/api/feature",
+        glue = "com.example.api.stepdefs",
+        tags = "@sanity or @regression"
+)
+public class CucumberTestRunner {
+}
+Step 9: Create Feature File
+api.feature
+
+gherkin
+Copy code
+Feature: API testing
+
+  @sanity
+  Scenario: Create and validate a record
+    Given I create a record with id "1" and data "sample data"
+    Then the record with id "1" should exist in the database with data "sample data"
+
+  @regression
+  Scenario: Delete a record
+    Given I create a record with id "2" and data "test data"
+    When I delete the record with id "2"
+    Then the record with id "2" should not exist in the database
+Step 10: Create Step Definitions
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.example.api.model.Record;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+@SpringBootTest
+public class ApiStepDefs {
+
+    private Response response;
+    private String id;
+
+    @Given("I create a record with id {string} and data {string}")
+    public void i_create_a_record_with_id_and_data(String id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {string} should exist in the database with data {string}")
+    public void the_record_with_id_should_exist_in_the_database_with_data(String id, String data) {
+        response = given()
+                .get("/api/record/" + id);
+        response.then().statusCode(200);
+        String responseData = JsonPath.read(response.asString(), "$.data");
+        assertThat(responseData, is(data));
+    }
+
+    @When("I delete the record with id {string}")
+    public void i_delete_the_record_with_id(String id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {string} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(String id) {
+        response = given().get("/api/record/" + id);
+        response.then().statusCode(404);
+    }
+
+    @After
+    public void cleanup() {
+        if (id != null) {
+            given().delete("/api/record/" + id);
+        }
+    }
+}
+4. Running the Tests
+You can run the tests using your IDE's test runner or by using Maven/Gradle from the command line:
+
+bash
+Copy code
+mvn test
+Notes
+Configuration: Ensure that your Cosmos DB configuration is correctly set up in application.properties or application.yml.
+Tags: Use the @sanity and @regression tags in your feature file to differentiate between sanity and regression tests.
+Cleanup: The @After hook in the step definitions ensures that records are cleaned up after each test.
+This setup provides a basic structure for API testing with Spring Boot, Cucumber, and Azure Cosmos DB. Adjustments might be needed based on your specific requirements and environment setup.
+
+
+
+
+
+Add the data driven . Pass all jsonpath and value to validate cosmos record. Make it generic 
+ChatGPT
+To make the validation of Cosmos DB records more data-driven and generic, you can parameterize the validation steps using Cucumber's DataTable and JSONPath expressions. This approach will allow you to pass different JSONPath expressions and expected values directly from the feature file, making your test cases more flexible and easier to maintain.
+
+Step-by-Step Implementation
+1. Update the Feature File
+api.feature
+
+gherkin
+Copy code
+Feature: API testing
+
+  @sanity
+  Scenario: Create and validate a record
+    Given I create a record with id "1" and data "sample data"
+    Then the record with id "1" should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 1            |
+      | $.data         | sample data  |
+
+  @regression
+  Scenario: Delete a record
+    Given I create a record with id "2" and data "test data"
+    When I delete the record with id "2"
+    Then the record with id "2" should not exist in the database
+2. Update Step Definitions to Handle DataTable
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.example.api.model.Record;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    private Response response;
+    private String id;
+
+    @Given("I create a record with id {string} and data {string}")
+    public void i_create_a_record_with_id_and_data(String id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {string} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(String id, DataTable dataTable) {
+        response = given()
+                .get("/api/record/" + id);
+        response.then().statusCode(200);
+
+        String responseString = response.asString();
+        Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+        for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+            String jsonPath = entry.getKey();
+            String expectedValue = entry.getValue();
+            String actualValue = JsonPath.read(responseString, jsonPath).toString();
+            assertThat(actualValue, is(expectedValue));
+        }
+    }
+
+    @When("I delete the record with id {string}")
+    public void i_delete_the_record_with_id(String id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {string} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(String id) {
+        response = given().get("/api/record/" + id);
+        response.then().statusCode(404);
+    }
+
+    @After
+    public void cleanup() {
+        if (id != null) {
+            given().delete("/api/record/" + id);
+        }
+    }
+}
+3. Ensure Dependencies are Included in pom.xml
+Make sure the following dependencies are included in your pom.xml:
+
+xml
+Copy code
+<dependencies>
+    <!-- Spring Boot and related dependencies -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-cosmos</artifactId>
+    </dependency>
+
+    <!-- Cucumber dependencies -->
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-java</artifactId>
+        <version>7.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-spring</artifactId>
+        <version>7.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit</artifactId>
+        <version>7.0.0</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Test dependencies -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+    </dependency>
+</dependencies>
+Explanation
+Feature File: The feature file now includes a data table to specify JSONPath expressions and expected values. This makes the test case data-driven and generic.
+Step Definitions: The step definitions use the DataTable to read the JSONPath expressions and expected values, then validate the API response using these parameters.
+JSONPath: The JsonPath.read method is used to extract values from the JSON response based on the provided JSONPath expressions.
+This approach provides a flexible and maintainable way to validate API responses against expected values, making your test suite more robust and adaptable to changes.
+
+
+
+
+
+
+
+
+Message ChatGPT
+
+ChatGPT can make mistakes. Check important info.
+ChatGPT
+
 
 # DataSource configuration
 spring.datasource.url=jdbc:sqlserver://<your-sql-server-name>.database.windows.net:1433;database=<your-database-name>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
