@@ -1,4 +1,432 @@
 ```code
+Sure, I'll provide the complete application for API automation testing using Spring Boot, Cucumber, and integration with Azure Cosmos DB. This application will include the following components:
+
+Spring Boot Application
+Model and Repository for Cosmos DB
+REST Controller
+Cucumber Step Definitions
+Cucumber Test Suite Configuration
+Feature File with Tags
+Maven Configuration (pom.xml)
+Step 1: Create the Spring Boot Application
+Application.java
+
+java
+Copy code
+package com.example.api;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+Step 2: Model and Repository for Cosmos DB
+Record.java
+
+java
+Copy code
+package com.example.api.model;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.cosmos.core.mapping.Container;
+
+@Container(containerName = "records")
+public class Record {
+    @Id
+    private Long id;
+    private String data;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
+}
+CosmosRepository.java
+
+java
+Copy code
+package com.example.api.repository;
+
+import com.example.api.model.Record;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CosmosRepository extends CrudRepository<Record, Long> {
+}
+Step 3: REST Controller
+RecordController.java
+
+java
+Copy code
+package com.example.api.controller;
+
+import com.example.api.model.Record;
+import com.example.api.repository.CosmosRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/record")
+public class RecordController {
+
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    @PostMapping
+    public Record createRecord(@RequestBody Record record) {
+        return cosmosRepository.save(record);
+    }
+
+    @PutMapping("/{id}")
+    public Record updateRecord(@PathVariable Long id, @RequestBody Record record) {
+        if (cosmosRepository.existsById(id)) {
+            record.setId(id);
+            return cosmosRepository.save(record);
+        }
+        throw new RuntimeException("Record not found");
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteRecord(@PathVariable Long id) {
+        cosmosRepository.deleteById(id);
+    }
+}
+Step 4: Cucumber Step Definitions
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.example.api.model.Record;
+import com.example.api.repository.CosmosRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+import java.util.Optional;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private Response response;
+    private Long id;
+
+    @Given("I create a record with id {long} and data {string}")
+    public void i_create_a_record_with_id_and_data(Long id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {long} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(Long id, DataTable dataTable) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+
+        try {
+            String recordJson = objectMapper.writeValueAsString(record);
+
+            Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+            for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+                String jsonPath = entry.getKey();
+                String expectedValue = entry.getValue();
+                String actualValue = JsonPath.read(recordJson, jsonPath).toString();
+                assertThat(actualValue, is(expectedValue));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert record to JSON", e);
+        }
+    }
+
+    @When("I update the record with id {long} to new data {string}")
+    public void i_update_the_record_with_id_to_new_data(Long id, String newData) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        record.setData(newData);
+
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .put("/api/record/" + id);
+    }
+
+    @When("I delete the record with id {long}")
+    public void i_delete_the_record_with_id(Long id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {long} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(Long id) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record should not exist in the database", optionalRecord.isEmpty());
+    }
+
+    @After
+    public void cleanup() {
+        if (id != null) {
+            cosmosRepository.deleteById(id);
+        }
+    }
+}
+Step 5: Cucumber Test Suite Configuration
+CucumberTestSuite.java
+
+java
+Copy code
+package com.example.api;
+
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.IncludeTags;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
+import io.cucumber.junit.platform.engine.Constants;
+
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "com.example.api.stepdefs")
+public class CucumberTestSuite {
+}
+Step 6: Feature File with Tags
+api.feature
+
+gherkin
+Copy code
+Feature: API testing
+
+  @sanity @regression
+  Scenario: Create and validate a record
+    Given I create a record with id 1 and data "sample data"
+    Then the record with id 1 should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 1            |
+      | $.data         | sample data  |
+
+  @regression
+  Scenario: Update and validate a record
+    Given I create a record with id 3 and data "initial data"
+    When I update the record with id 3 to new data "updated data"
+    Then the record with id 3 should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 3            |
+      | $.data         | updated data |
+
+  @regression
+  Scenario: Delete a record
+    Given I create a record with id 2 and data "test data"
+    When I delete the record with id 2
+    Then the record with id 2 should not exist in the database
+Step 7: Maven Configuration (pom.xml)
+pom.xml
+
+xml
+Copy code
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://www.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>api-testing</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <junit.jupiter.version>5.8.2</junit.jupiter.version>
+        <cucumber.version>7.0.0</cucumber.version>
+    </properties>
+
+    <dependencies>
+        <!-- Cucumber Dependencies -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-spring</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform
+
+
+
+
+Continue 
+ChatGPT
+Certainly! Here's the continuation of the pom.xml configuration:
+
+pom.xml (continued)
+
+xml
+Copy code
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
+
+        <!-- JUnit 5 Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
+        </dependency>
+
+        <!-- Spring Boot Test Dependency -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- JSONPath Dependency -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
+        <!-- RestAssured Dependency for API Testing -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Surefire Plugin for Running Tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <cucumber.filter.tags>${cucumber.filter.tags}</cucumber.filter.tags>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>sanity</id>
+            <properties>
+                <cucumber.filter.tags>@sanity</cucumber.filter.tags>
+            </properties>
+        </profile>
+        <profile>
+            <id>regression</id>
+            <properties>
+                <cucumber.filter.tags>@regression</cucumber.filter.tags>
+            </properties>
+        </profile>
+        <profile>
+            <id>smoke</id>
+            <properties>
+                <cucumber.filter.tags>@smoke</cucumber.filter.tags>
+            </properties>
+        </profile>
+    </profiles>
+</project>
+Summary
+Application Configuration: The Spring Boot application, Cosmos DB model, and repository are set up to manage records.
+REST Controller: Provides CRUD operations for records.
+Cucumber Step Definitions: Contains steps for creating, updating, deleting, and validating records in Cosmos DB, using JsonPath for JSON validation.
+Cucumber Test Suite: Configured to use JUnit Platform and includes Cucumber.
+Feature File: Defines the scenarios and tags for different tests.
+Maven Configuration: Manages dependencies, build plugins, and profiles for running tests based on tags.
+Running the Tests
+To run the tests with specific tags, use the following Maven commands:
+
+For sanity tests:
+
+bash
+Copy code
+mvn test -Psanity
+For regression tests:
+
+bash
+Copy code
+mvn test -Pregression
+For smoke tests:
+
+bash
+Copy code
+mvn test -Psmoke
+This setup will ensure that your API automation tests are well-organized, easily manageable, and capable of being executed based on different testing categories through Maven profiles.
+
+
+
+
+
+
+
+
+
+
+
+
 To run tests based on multiple tags and simplify the command to mvn test -Dsanity, we can utilize the Maven properties and @IncludeTags annotations more effectively.
 
 Step 1: Modify the Test Suite to Include Multiple Tags
