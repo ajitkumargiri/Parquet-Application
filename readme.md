@@ -1,5 +1,176 @@
 
-``` code
+`To make the validation of Cosmos DB records more data-driven and generic, you can parameterize the validation steps using Cucumber's DataTable and JSONPath expressions. This approach will allow you to pass different JSONPath expressions and expected values directly from the feature file, making your test cases more flexible and easier to maintain.
+
+Step-by-Step Implementation
+1. Update the Feature File
+api.feature
+
+gherkin
+Copy code
+Feature: API testing
+
+  @sanity
+  Scenario: Create and validate a record
+    Given I create a record with id "1" and data "sample data"
+    Then the record with id "1" should exist in the database with the following data:
+      | jsonPath       | value        |
+      | $.id           | 1            |
+      | $.data         | sample data  |
+
+  @regression
+  Scenario: Delete a record
+    Given I create a record with id "2" and data "test data"
+    When I delete the record with id "2"
+    Then the record with id "2" should not exist in the database
+2. Update Step Definitions to Handle DataTable
+ApiStepDefs.java
+
+java
+Copy code
+package com.example.api.stepdefs;
+
+import com.example.api.model.Record;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    private Response response;
+    private String id;
+
+    @Given("I create a record with id {string} and data {string}")
+    public void i_create_a_record_with_id_and_data(String id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {string} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(String id, DataTable dataTable) {
+        response = given()
+                .get("/api/record/" + id);
+        response.then().statusCode(200);
+
+        String responseString = response.asString();
+        Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+        for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+            String jsonPath = entry.getKey();
+            String expectedValue = entry.getValue();
+            String actualValue = JsonPath.read(responseString, jsonPath).toString();
+            assertThat(actualValue, is(expectedValue));
+        }
+    }
+
+    @When("I delete the record with id {string}")
+    public void i_delete_the_record_with_id(String id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {string} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(String id) {
+        response = given().get("/api/record/" + id);
+        response.then().statusCode(404);
+    }
+
+    @After
+    public void cleanup() {
+        if (id != null) {
+            given().delete("/api/record/" + id);
+        }
+    }
+}
+3. Ensure Dependencies are Included in pom.xml
+Make sure the following dependencies are included in your pom.xml:
+
+xml
+Copy code
+<dependencies>
+    <!-- Spring Boot and related dependencies -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-cosmos</artifactId>
+    </dependency>
+
+    <!-- Cucumber dependencies -->
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-java</artifactId>
+        <version>7.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-spring</artifactId>
+        <version>7.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit</artifactId>
+        <version>7.0.0</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Test dependencies -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+    </dependency>
+</dependencies>
+Explanation
+Feature File: The feature file now includes a data table to specify JSONPath expressions and expected values. This makes the test case data-driven and generic.
+Step Definitions: The step definitions use the DataTable to read the JSONPath expressions and expected values, then validate the API response using these parameters.
+JSONPath: The JsonPath.read method is used to extract values from the JSON response based on the provided JSONPath expressions.
+This approach provides a flexible and maintainable way to validate API responses against expected values, making your test suite more robust and adaptable to changes.
+
+
+
+
+
+
+
+
+
+
+ChatGPT can make`` code
+
+
+
+
+
 Open sidebar
 ChatGPT
 
