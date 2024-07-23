@@ -1,4 +1,84 @@
+```code
+package com.example.api.stepdefs;
 
+import com.example.api.model.Record;
+import com.example.api.repository.CosmosRepository;
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import io.cucumber.datatable.DataTable;
+
+import java.util.Map;
+import java.util.Optional;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class ApiStepDefs {
+
+    @Autowired
+    private CosmosRepository cosmosRepository;
+
+    private Response response;
+    private String id;
+
+    @Given("I create a record with id {string} and data {string}")
+    public void i_create_a_record_with_id_and_data(String id, String data) {
+        this.id = id;
+        Record record = new Record();
+        record.setId(id);
+        record.setData(data);
+        response = given()
+                .contentType("application/json")
+                .body(record)
+                .post("/api/record");
+    }
+
+    @Then("the record with id {string} should exist in the database with the following data:")
+    public void the_record_with_id_should_exist_in_the_database_with_the_following_data(String id, DataTable dataTable) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record not found in the database", optionalRecord.isPresent());
+
+        Record record = optionalRecord.get();
+        String recordJson = JsonPath.parse(record).jsonString();
+
+        Map<String, String> dataMap = dataTable.asMap(String.class, String.class);
+
+        for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+            String jsonPath = entry.getKey();
+            String expectedValue = entry.getValue();
+            String actualValue = JsonPath.read(recordJson, jsonPath).toString();
+            assertThat(actualValue, is(expectedValue));
+        }
+    }
+
+    @When("I delete the record with id {string}")
+    public void i_delete_the_record_with_id(String id) {
+        given().delete("/api/record/" + id).then().statusCode(204);
+    }
+
+    @Then("the record with id {string} should not exist in the database")
+    public void the_record_with_id_should_not_exist_in_the_database(String id) {
+        Optional<Record> optionalRecord = cosmosRepository.findById(id);
+        assertThat("Record should not exist in the database", optionalRecord.isEmpty());
+    }
+
+    @After
+    public void cleanup() {
+        if (id != null) {
+            cosmosRepository.deleteById(id);
+        }
+    }
+}
+```
 `To make the validation of Cosmos DB records more data-driven and generic, you can parameterize the validation steps using Cucumber's DataTable and JSONPath expressions. This approach will allow you to pass different JSONPath expressions and expected values directly from the feature file, making your test cases more flexible and easier to maintain.
 
 Step-by-Step Implementation
