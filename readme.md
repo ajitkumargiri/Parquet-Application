@@ -1,9 +1,96 @@
-I would prefer Vapiano, but unfortunately, I can't join tomorrow. I had planned to move on Sunday, but due to a lack of logistics availability, I now have to shift on Saturday. I have many things to arrange tomorrow, so I will need to log off early.
+
 
 
 
 
 ```code
+Open sidebar
+ChatGPT
+
+Java code to extract jsonpath and value 
+ChatGPT
+To extract values from a JSON object using JSONPath in Java, you can use the com.jayway.jsonpath library. Below is an example of how to achieve this.
+
+First, you need to include the JSONPath dependency in your project. If you are using Maven, add this to your pom.xml:
+
+xml
+Copy code
+<dependency>
+    <groupId>com.jayway.jsonpath</groupId>
+    <artifactId>json-path</artifactId>
+    <version>2.6.0</version>
+</dependency>
+Here is a Java example to extract JSONPath and value:
+
+java
+Copy code
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.ReadContext;
+import java.util.List;
+import java.util.Map;
+
+public class JsonPathExtractor {
+    public static void main(String[] args) {
+        // Example JSON data
+        String json = "{\n" +
+                      "  \"store\": {\n" +
+                      "    \"book\": [\n" +
+                      "      { \"category\": \"reference\",\n" +
+                      "        \"author\": \"Nigel Rees\",\n" +
+                      "        \"title\": \"Sayings of the Century\",\n" +
+                      "        \"price\": 8.95\n" +
+                      "      },\n" +
+                      "      { \"category\": \"fiction\",\n" +
+                      "        \"author\": \"Evelyn Waugh\",\n" +
+                      "        \"title\": \"Sword of Honour\",\n" +
+                      "        \"price\": 12.99\n" +
+                      "      }\n" +
+                      "    ],\n" +
+                      "    \"bicycle\": {\n" +
+                      "      \"color\": \"red\",\n" +
+                      "      \"price\": 19.95\n" +
+                      "    }\n" +
+                      "  }\n" +
+                      "}";
+
+        // Compile JSONPath expressions
+        String jsonPathExpr1 = "$.store.book[*].author";
+        String jsonPathExpr2 = "$.store.bicycle.color";
+
+        // Parse the JSON document
+        ReadContext ctx = JsonPath.parse(json);
+
+        // Extract values using JSONPath
+        List<String> authors = ctx.read(jsonPathExpr1);
+        String bicycleColor = ctx.read(jsonPathExpr2);
+
+        // Print the extracted values
+        System.out.println("Authors: " + authors);
+        System.out.println("Bicycle color: " + bicycleColor);
+    }
+}
+Explanation
+Dependency: The json-path library is included as a Maven dependency.
+JSON Data: A sample JSON string is provided.
+JSONPath Expressions: JSONPath expressions are defined to extract specific parts of the JSON data.
+Parsing JSON: The JSON data is parsed using JsonPath.parse().
+Extracting Values: Values are extracted using ctx.read() method with the JSONPath expressions.
+Output: The extracted values are printed to the console.
+This example demonstrates how to use JSONPath to extract data from a JSON object in Java. You can adjust the JSONPath expressions to fit your specific needs.
+
+
+
+
+
+
+
+
+Message ChatGPT
+
+ChatGPT can make mistakes. Check important info.
+ChatGPT
+
+
 package com.example.demo.config;
 
 import com.azure.identity.ClientSecretCredential;
