@@ -4,6 +4,68 @@
 
 
 ```code
+
+
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+
+public class JsonPathExtractor {
+    
+    public static void main(String[] args) throws IOException {
+        // Example JSON data
+        String json = "{\n" +
+                "  \"store\": {\n" +
+                "    \"book\": [\n" +
+                "      { \"category\": \"reference\",\n" +
+                "        \"author\": \"Nigel Rees\",\n" +
+                "        \"title\": \"Sayings of the Century\",\n" +
+                "        \"price\": 8.95\n" +
+                "      },\n" +
+                "      { \"category\": \"fiction\",\n" +
+                "        \"author\": \"Evelyn Waugh\",\n" +
+                "        \"title\": \"Sword of Honour\",\n" +
+                "        \"price\": 12.99\n" +
+                "      }\n" +
+                "    ],\n" +
+                "    \"bicycle\": {\n" +
+                "      \"color\": \"red\",\n" +
+                "      \"price\": 19.95\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(json);
+
+        printJsonPaths(rootNode, "$");
+    }
+
+    private static void printJsonPaths(JsonNode node, String path) {
+        if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> field = fields.next();
+                printJsonPaths(field.getValue(), path + "." + field.getKey());
+            }
+        } else if (node.isArray()) {
+            for (int i = 0; i < node.size(); i++) {
+                printJsonPaths(node.get(i), path + "[" + i + "]");
+            }
+        } else {
+            // Leaf node
+            System.out.println(path + ": " + node.asText());
+        }
+    }
+}
+
+
+
+
 Open sidebar
 ChatGPT
 
