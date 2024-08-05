@@ -5,6 +5,84 @@
 
 ```code
 
+package com.example.demo.steps;
+
+import com.jayway.jsonpath.JsonPath;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+import org.springframework.test.context.ContextConfiguration;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+@Component
+@ContextConfiguration(classes = SpringBootTestConfig.class)
+public class StepDefinitions {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private String jsonRecord;
+    private List<Map<String, String>> expectedData;
+    private List<String> mismatches;
+
+    @Given("I have the following data:")
+    public void i_have_the_following_data(DataTable dataTable) {
+        this.expectedData = dataTable.asMaps(String.class, String.class);
+        this.mismatches = new ArrayList<>();
+    }
+
+    @When("I retrieve the record with id {long}")
+    public void i_retrieve_the_record_with_id(Long id) {
+        // Retrieve the JSON record from the database
+        String sql = "SELECT record FROM users WHERE id = ?";
+        jsonRecord = jdbcTemplate.queryForObject(sql, new Object[]{id}, String.class);
+    }
+
+    @Then("the record should match the expected values")
+    public void the_record_should_match_the_expected_values() {
+        for (Map<String, String> data : expectedData) {
+            String jsonPath = data.get("jsonPath");
+            String expectedValue = data.get("expectedValue");
+
+            // Read the actual value from the JSON record
+            Object actualValue = JsonPath.read(jsonRecord, jsonPath);
+
+            // Handle the expected value cases
+            if ("NULL".equalsIgnoreCase(expectedValue)) {
+                // Handle expected NULL values
+                if (actualValue != null) {
+                    mismatches.add("Expected null value for JSONPath: " + jsonPath + " but was: " + actualValue);
+                }
+            } else if (expectedValue == null || expectedValue.trim().isEmpty()) {
+                // Handle expected empty values
+                if (!"".equals(actualValue == null ? "" : actualValue.toString())) {
+                    mismatches.add("Expected empty value for JSONPath: " + jsonPath + " but was: " + actualValue);
+                }
+            } else {
+                // Handle non-null and non-empty values
+                if (!expectedValue.equals(actualValue == null ? null : actualValue.toString())) {
+                    mismatches.add("Mismatch for JSONPath: " + jsonPath + " - Expected: " + expectedValue + " but was: " + actualValue);
+                }
+            }
+        }
+
+        // If there are mismatches, fail the test and print all mismatches
+        if (!mismatches.isEmpty()) {
+            StringBuilder failureMessage = new StringBuilder("There were data mismatches:\n");
+            mismatches.forEach(mismatch -> failureMessage.append(mismatch).append("\n"));
+            fail(failureMessage.toString());
+        }
+    }
+}
 
 
 import com.fasterxml.jackson.databind.JsonNode;
