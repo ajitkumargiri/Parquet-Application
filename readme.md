@@ -1,4 +1,13 @@
 
+azure.cosmos.uri=https://<your-cosmosdb-account>.documents.azure.com:443/
+azure.cosmos.key=<your-cosmosdb-primary-key>
+azure.cosmos.database=<your-database-name>
+azure.cosmos.connection-mode=GATEWAY
+
+
+
+
+
 
 
 
