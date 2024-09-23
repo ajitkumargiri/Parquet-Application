@@ -1,3 +1,7 @@
+Hi team,
+
+I received a response from the GMT team confirming that the signing of the document is just a formality and can be completed later. They’ve already approved my request, so I can proceed with work today without any issues.
+
 Subject: Follow-up on Signed Document Submission
 
 Dear Team,
