@@ -1,4 +1,43 @@
-Hi team,
+public static String mapNumberOfSegmentToRange(String numberOfSegment) {
+    if (numberOfSegment == null || numberOfSegment.trim().isEmpty()) {
+        return "Invalid input: empty or null";
+    }
+
+    // Trim and pad the input to ensure it's always two digits
+    numberOfSegment = numberOfSegment.trim();
+    if (numberOfSegment.length() == 1) {
+        numberOfSegment = "0" + numberOfSegment;
+    }
+
+    switch (numberOfSegment) {
+        case "01":
+            return "None";
+        case "02":
+            return "1";
+        case "03":
+            return "2 to 5";
+        case "04":
+            return "5 to 10";
+        case "05":
+            return "10 to 20";
+        case "06":
+            return "20 to 50";
+        case "07":
+            return "50 to 100";
+        case "08":
+            return "100 to 200";
+        case "09":
+            return "200 to 500";
+        case "10":
+            return "500 to 750";
+        case "11":
+            return "750 to 1000";
+        case "12":
+            return "1000 and more";
+        default:
+            return "Invalid segment: " + numberOfSegment;
+    }
+}Hi team,
 
 I received a response from the GMT team confirming that the signing of the document is just a formality and can be completed later. They’ve already approved my request, so I can proceed with work today without any issues.
 
