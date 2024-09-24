@@ -1,3 +1,34 @@
+
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
+
+class MyTests {
+
+    // A method to be tested
+    public int multiply(int a, int b) {
+        return a * b;
+    }
+
+    static Stream<org.junit.jupiter.params.provider.Arguments> provideMultiplyArguments() {
+        return Stream.of(
+            org.junit.jupiter.params.provider.Arguments.of(2, 3, 6),
+            org.junit.jupiter.params.provider.Arguments.of(5, 5, 25),
+            org.junit.jupiter.params.provider.Arguments.of(7, 3, 21)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideMultiplyArguments")
+    void testMultiply(int a, int b, int expectedResult) {
+        // Use assertEquals to check if the result is correct
+        assertEquals(expectedResult, multiply(a, b));
+    }
+}
+ 
+ 
  that extending my time working remotely could help accelerate the bug-fixing process. Therefore, I have decided to postpone the renovation work until after the project go-live.
 
 
