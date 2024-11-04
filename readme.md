@@ -1,3 +1,139 @@
+ChatGPT
+
+You said:
+I am investigating on a epic how to connect SQL server from azure build agent. We are using manage identity.
+So need to investigate all other way using spring boot.
+Prepare the documents of all findings. So other team mates can refer.
+ChatGPT said:
+ChatGPT
+To document the process of connecting to an SQL Server database using a Managed Identity from an Azure build agent in a Spring Boot application, let's go through a structured approach. This document will include the various approaches, necessary configurations, code examples, and other relevant details that team members can follow.
+
+Document: Connecting SQL Server from Azure Build Agent Using Managed Identity in Spring Boot
+1. Overview
+This document outlines the steps and considerations for connecting to an Azure SQL Server from an Azure DevOps Build Agent using Managed Identity in a Spring Boot application. Managed Identity allows secure access to Azure resources without needing explicit credentials in code.
+
+2. Prerequisites
+Before implementing, ensure the following prerequisites:
+
+Azure SQL Server instance is set up.
+Managed Identity is enabled on the Azure DevOps build agent (either a system-assigned or user-assigned identity).
+Database Permissions: The Managed Identity used should have db_datareader or db_datawriter permissions, depending on your access needs.
+Spring Boot Application with spring-boot-starter-data-jdbc or spring-boot-starter-data-jpa dependency.
+3. Configuring Managed Identity
+Managed Identity can be configured in two ways:
+
+System-assigned Managed Identity: Automatically enabled at the resource level.
+User-assigned Managed Identity: Needs to be created separately and assigned to the resource.
+Steps to configure:
+
+Assign Managed Identity to Azure DevOps Agent Pool or VM.
+
+Go to your Azure VM or Azure DevOps Agent Pool.
+Under Identity (or Access control), enable either a system-assigned or a user-assigned Managed Identity.
+Grant Access to Azure SQL Server.
+
+Go to your SQL Server in Azure Portal.
+Navigate to Azure Active Directory admin and set up an admin (if not done yet).
+Add the Managed Identity (system or user-assigned) as a user in SQL Server with appropriate roles (like db_datareader or db_owner).
+4. Connection Options in Spring Boot
+To connect to Azure SQL Server with Managed Identity, you can use two approaches:
+
+Azure AD Authentication using AzureIdentityAuthenticationProvider
+JDBC Driver with Managed Identity authentication
+Let's go through both.
+
+Option 1: Using Azure Identity Authentication Provider
+Dependencies
+Add the following dependencies to your pom.xml for using Azure AD authentication:
+
+xml
+Copy code
+<dependency>
+    <groupId>com.microsoft.azure</groupId>
+    <artifactId>azure-identity</artifactId>
+    <version>1.2.0</version>
+</dependency>
+<dependency>
+    <groupId>com.microsoft.sqlserver</groupId>
+    <artifactId>mssql-jdbc</artifactId>
+    <version>9.2.0.jre8</version>
+</dependency>
+Spring Boot Configuration
+Add the following properties in application.properties or application.yml:
+
+properties
+Copy code
+spring.datasource.url=jdbc:sqlserver://<your-sql-server-name>.database.windows.net:1433;database=<database-name>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.datasource.authentication=ActiveDirectoryManagedIdentity
+Code Configuration
+In your Spring Boot configuration, use the DefaultAzureCredentialBuilder to obtain a token:
+
+java
+Copy code
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import javax.sql.DataSource;
+
+@Bean
+public DataSource dataSource() {
+    SQLServerDataSource dataSource = new SQLServerDataSource();
+    dataSource.setServerName("<your-sql-server-name>.database.windows.net");
+    dataSource.setDatabaseName("<database-name>");
+    dataSource.setAuthentication("ActiveDirectoryManagedIdentity");
+    return dataSource;
+}
+Notes
+The DefaultAzureCredentialBuilder will pick up the Managed Identity when running in the Azure DevOps agent environment.
+Option 2: Using JDBC Driver with Managed Identity
+Dependencies
+Add the SQL Server JDBC dependency in pom.xml:
+
+xml
+Copy code
+<dependency>
+    <groupId>com.microsoft.sqlserver</groupId>
+    <artifactId>mssql-jdbc</artifactId>
+    <version>9.2.0.jre8</version>
+</dependency>
+Spring Boot Configuration
+In application.properties or application.yml, configure the following properties:
+
+properties
+Copy code
+spring.datasource.url=jdbc:sqlserver://<your-sql-server-name>.database.windows.net:1433;database=<database-name>;authentication=ActiveDirectoryManagedIdentity;
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+5. Additional Considerations
+Firewall Rules: Ensure that the Azure SQL Server firewall allows access from Azure services.
+Connection Pooling: Use connection pooling to optimize database access. Libraries like HikariCP are popular choices.
+6. Testing the Connection
+To verify the connection from an Azure DevOps build pipeline:
+
+Create a Test Pipeline: Create an Azure DevOps pipeline that triggers on code push.
+Run Database Tests: Use a lightweight query to validate the database connection.
+Verify Logs: Check pipeline logs to confirm successful connectivity or diagnose issues.
+7. Troubleshooting Common Issues
+Firewall Issues: Verify that the Azure SQL Server firewall allows access from your build agent IP or has Allow Azure services enabled.
+Authentication Failures: Double-check Managed Identity permissions on the SQL Server.
+Connection Timeouts: Increase the loginTimeout in the connection string if needed.
+8. References
+Microsoft Docs: Managed Identity in Azure
+Microsoft SQL Server JDBC with Managed Identity
+Conclusion
+This document provides a comprehensive overview of connecting to Azure SQL Server from an Azure DevOps build agent using Managed Identity in Spring Boot. By following these steps, team members should be able to establish secure and managed database connectivity.
+
+Let me know if you need more details on any section or further customization!
+
+
+
+
+
+
+
+
+
+
+
 
  import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.params.ParameterizedTest;
