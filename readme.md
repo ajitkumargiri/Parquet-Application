@@ -1,5 +1,42 @@
 
 ```code
+flowchart TD
+    %% Step 1: Ingestion
+    ADF_Ingest[Azure Data Factory (Ingestion Pipeline)]
+    ADF_Ingest -->|Triggers ETL process| Databricks_Start[Databricks Cluster]
+
+    %% Step 2: Databricks Parsing and Staging
+    Databricks_Start -->|Reads fixed-length files from Azure Storage| Storage[Azure Storage]
+    Storage -->|Cobrix Parsing (Databricks)| Parsed_Data[Staging Area: Parsed Data]
+    
+    %% Step 3: Databricks Combining Files
+    Parsed_Data -->|Joins parsed records into unified user profiles| Unified_User_File[Unified User Record File]
+    
+    %% Step 4: Java Transformation Library
+    Unified_User_File -->|Java Transformation Library| Java_Transform[Transform to Employee Model]
+    Java_Transform -->|Employee Objects with Inheritance| Transformed_Employee_Data[Transformed Employee Data]
+
+    %% Step 5: Data Storage (Cosmos DB and SQL Server)
+    Transformed_Employee_Data -->|Store Employee Data| CosmosDB[(Cosmos DB)]
+    Transformed_Employee_Data -->|Store Employee-Manager Relations| SQLServer[(SQL Server)]
+
+    %% Connections and Annotations
+    %% Legend
+    classDef azure fill:#007FFF,stroke:#FFFFFF,stroke-width:2px;
+    classDef databricks fill:#FF5733,stroke:#FFFFFF,stroke-width:2px;
+    classDef storage fill:#FFDD33,stroke:#FFFFFF,stroke-width:2px;
+    classDef db fill:#FFFFFF,stroke:#333333,stroke-width:2px;
+    classDef process fill:#4CAF50,stroke:#FFFFFF,stroke-width:2px;
+
+    %% Apply Classes
+    class ADF_Ingest azure;
+    class Databricks_Start,Java_Transform databricks;
+    class Storage,Parsed_Data,Unified_User_File storage;
+    class CosmosDB,SQLServer db;
+    class Transformed_Employee_Data process;
+
+
+
 To address the requirements of processing, transforming, and storing 12 million records from mainframe batch files in Azure, here are multiple solution approaches. I'll outline each solution with its pros and cons and then recommend the best one for your use case.
 
 Solution 1: Azure Data Factory (ADF) Pipeline with Databricks Transformation and Database Storage
