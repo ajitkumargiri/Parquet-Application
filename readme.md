@@ -1,5 +1,82 @@
 
 ```code
+
+flowchart TD
+    %% Ingestion and Orchestration (ADF)
+    ADF_Ingest[Azure Data Factory (Ingestion Pipeline)]
+    subgraph "1. Ingestion & Orchestration"
+        direction TB
+        ADF_Ingest -->|Start Databricks Cluster| Databricks_Start[Databricks Cluster]
+        ADF_Ingest -->|Monitor & Manage Pipeline| ADF_Monitor[Pipeline Monitoring & Alerts]
+    end
+    
+    %% Databricks Data Parsing & Staging (Cobrix Integration)
+    subgraph "2. Data Parsing & Staging"
+        direction TB
+        Databricks_Start -->|Read Files from Azure Storage| AzureStorage[Azure Data Lake Storage (ADLS)]
+        AzureStorage -->|Parse Files with Cobrix| Parsed_Data[Parsed Datasets (Staging Area)]
+        Parsed_Data -->|Separate User Data Files (Address, Contact, Manager)| Parsed_Files((Separate Parsed Files))
+        Parsed_Files -->|Error Logging & Retry Mechanism| Parsing_Logs[Error Logs & Retrying]
+    end
+
+    %% Databricks Data Transformation (Combining Parsed Data)
+    subgraph "3. Data Combination & Transformation"
+        direction TB
+        Parsed_Files -->|Combine Parsed Data into Unified Records| Unified_User_Record[Unified User Record]
+        Unified_User_Record -->|Data Cleaning & Standardization| Cleaned_User_Record[Cleaned & Standardized Records]
+    end
+
+    %% Java Library Transformation for Employee Model
+    subgraph "4. Java Library Transformation"
+        direction TB
+        Cleaned_User_Record -->|Transform to Employee Domain| Java_Transform[Java Transformation Library]
+        Java_Transform -->|Map to Employee Model with Inheritance| Transformed_Employee[Transformed Employee Data]
+        Java_Transform -->|Log Transformation Success & Errors| Transform_Logs[Transformation Logs]
+    end
+
+    %% Storing Data in Cosmos DB and SQL Server
+    subgraph "5. Data Storage & Relationships"
+        direction LR
+        Transformed_Employee -->|Store Employee Data in Cosmos DB| CosmosDB[(Cosmos DB)]
+        CosmosDB -->|Generate Employee IDs| Employee_IDs[Employee IDs for Relational Mapping]
+        
+        Employee_IDs -->|Map Employee-Manager Relations| SQL_Relation[Employee-Manager Relationship]
+        SQL_Relation -->|Store Relationships| SQLServer[(SQL Server)]
+        SQLServer -->|Log Stored Relations| Relation_Logs[Storage Logs]
+    end
+
+    %% Monitoring and Error Handling
+    subgraph "6. Monitoring, Logging & Error Handling"
+        direction TB
+        Parsing_Logs -->|Error Notifications & Alerts| ADF_Monitor
+        Transform_Logs -->|Error Notifications & Alerts| ADF_Monitor
+        Relation_Logs -->|Success & Error Notifications| ADF_Monitor
+        ADF_Monitor -->|Send Notifications to Admins| Notifications[Admin Alerts & Notifications]
+    end
+    
+    %% Connections and Styling for clarity
+    classDef azure fill:#007FFF,stroke:#FFFFFF,stroke-width:2px;
+    classDef databricks fill:#FF5733,stroke:#FFFFFF,stroke-width:2px;
+    classDef storage fill:#FFDD33,stroke:#FFFFFF,stroke-width:2px;
+    classDef db fill:#FFFFFF,stroke:#333333,stroke-width:2px;
+    classDef process fill:#4CAF50,stroke:#FFFFFF,stroke-width:2px;
+    classDef monitor fill:#FFD700,stroke:#FFFFFF,stroke-width:2px;
+
+    %% Apply Classes to Nodes for Clearer Representation
+    class ADF_Ingest,ADF_Monitor,Notifications monitor;
+    class Databricks_Start,Java_Transform databricks;
+    class AzureStorage,Parsed_Data,Parsed_Files,Unified_User_Record, Cleaned_User_Record storage;
+    class CosmosDB,SQLServer db;
+    class Parsed_Files,Parsing_Logs,Transform_Logs,Relation_Logs process;
+    class Transformed_Employee,SQL_Relation,Employee_IDs process;
+
+
+
+
+
+
+
+
 flowchart TD
     %% Step 1: Ingestion
     ADF_Ingest[Azure Data Factory (Ingestion Pipeline)]
