@@ -2,6 +2,32 @@
 ```code
 
 
+
+
+
+
+
+graph TD
+  A[Start] --> B[Databricks - Read COBOL Files from Azure Storage]
+  B --> C[Databricks - Combine Data into Unified User File (Parquet)]
+  C --> D[Databricks - Store Unified Data into Azure Blob Storage]
+  D --> E[Trigger Azure Batch for Transformation via Queue]
+  
+  E --> F[Azure Batch - Retrieve Unified User Data from Blob Storage]
+  F --> G[Azure Batch - Transform Records into Employee Model (Parallel Processing)]
+  G --> H[Store Transformed Employee Data into Azure Blob Storage]
+  H --> I[Trigger Spring Batch for DB Insertion]
+
+  I --> J[Spring Batch - Read Transformed Data from Blob Storage]
+  J --> K[Spring Batch - Process Records in Batches (Using Java Transformation Library)]
+  K --> L[Spring Batch - Store Transformed Employee Data in SQL Server]
+  K --> M[Spring Batch - Store Transformed Employee Data in Cosmos DB]
+
+  L --> N[End - Data Stored in SQL Server (Employee and Manager Relations)]
+  M --> O[End - Employee Data Stored in Cosmos DB]
+
+
+
 To estimate the time taken for each solution, let's analyze the three key stages of the process for both approaches:
 
 Databricks reads and parses COBOL files, creating a unified user file.
