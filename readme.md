@@ -1,5 +1,29 @@
 
 ```code
+Subject: Request for Assistance with Wife's RP Extension
+
+Dear [Manager's Name],
+
+I hope this email finds you well.
+
+During my HSM visa process, the Vialto team informed me that my wife's dependent residence permit (RP) would remain valid until its expiration date. As it is set to expire at the end of December, I would like to initiate the process to renew her RP to ensure continuity.
+
+Could you please advise if it is possible to raise this request through the ABN AMRO Vialto partnership, or if there is an alternative process I should follow? Any guidance or support in this matter would be greatly appreciated.
+
+Thank you for your assistance, and I look forward to your response.
+
+Best regards,
+[Your Full Name]
+[Your Contact Information]
+
+
+
+
+
+
+
+
+
 
 riggering Azure Batch from an external service (like Databricks or Azure Functions) typically involves using the Azure Batch REST API, Azure SDKs, or an Azure Logic App. Here's how you can trigger Azure Batch for your solution after Databricks has processed the COBOL files:
 
