@@ -1,6 +1,19 @@
 
 ```code
 
+
+Good Morning.
+
+I attended the System Architecture call earlier today, and it was highlighted that we need to conduct an impact analysis from our end and plan accordingly.
+
+@Abhishek Sahu, could you confirm if this handover has already been completed? Alternatively, should we coordinate with Rajashree to gather the necessary details before her departure?
+
+Looking forward to your response.
+
+Best regards,
+
+
+
 Let's include the storage of 10 million records into the database (e.g., Cosmos DB or SQL Server) in the analysis. Here's the updated comparison:
 
 1. Azure Data Factory (ADF)
