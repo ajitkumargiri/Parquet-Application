@@ -1,6 +1,92 @@
 
 ```code
 
+User Story: Trigger Databricks Job to Read Files from Azure Storage
+
+Why:
+As a data team, we want to automate the execution of Databricks notebooks to read files from the Azure Storage Account so that we can process data efficiently and reliably without manual intervention.
+
+What:
+Enable a mechanism to trigger the Databricks job that executes the notebooks for reading and processing files in Azure Storage. This will include setting up the trigger (e.g., via an event, API call, or scheduler) and ensuring proper logging and monitoring.
+
+How:
+
+1. Configure the Databricks job to integrate with the trigger mechanism.
+
+
+2. Set up a scheduler (e.g., Azure Data Factory, Databricks Jobs, or Azure Event Grid) to initiate the process.
+
+
+3. Implement logging to track the job's execution status.
+
+
+4. Test the end-to-end flow to ensure the files are successfully read from Azure Storage.
+
+
+
+Dependencies:
+
+Access to the Azure Storage Account with proper permissions.
+
+Databricks cluster configured and running.
+
+Triggering mechanism (e.g., scheduler, event source) integrated with Databricks.
+
+Development and testing environment set up for end-to-end validation.
+
+
+
+---
+
+Acceptance Criteria:
+
+1. Job Execution Triggered Automatically:
+
+The Databricks job is triggered based on the defined mechanism (event, schedule, or API call).
+
+
+
+2. Job Reads Files from Azure Storage:
+
+The Databricks job successfully reads data files from the configured Azure Storage Account.
+
+
+
+3. Logs and Monitoring:
+
+Execution logs are created and stored for each run. Logs should show if the files were read successfully or if any errors occurred during the job execution.
+
+
+
+4. Error Handling:
+
+If the job fails (e.g., due to access issues or missing files), the failure is logged and notified to the appropriate team member (via email or monitoring tool).
+
+
+
+5. Successful Job Completion:
+
+The job completes successfully, with all required data files being processed as expected within the time frame defined for the trigger.
+
+
+
+6. Security and Permissions:
+
+The Databricks job has the correct permissions to access the Azure Storage Account and execute on the cluster. Proper access controls are in place.
+
+
+
+7. Testing & Validation:
+
+The entire flow is tested end-to-end, with successful execution of the trigger, file reading, and data processing in Databricks.
+
+
+
+
+
+
+
+
 
 Good Morning.
 
