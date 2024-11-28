@@ -1,6 +1,225 @@
 
 ```code
 
+High-Level Design (HLD) Document
+
+
+---
+
+1. Overview
+
+The objective of this solution is to process and transform raw data involving Agreement Contracts associated with multiple Entities. The solution will derive relevant attributes for each Entity, apply business rules, and then store the results in a cloud-based storage system (Azure Storage). The final transformed data will be written to multiple destinations, including Azure Cosmos DB and SQL Server.
+
+2. System Components
+
+Data Sources: Raw data files (fixed-length) stored in Azure Storage, in compressed (ZIP) format.
+
+Transformation Engine: Apache Spark running on Databricks for data extraction, transformation, and loading (ETL).
+
+Business Logic: A set of transformation rules to derive and calculate attributes for each Entity based on their relationship to the Agreement Contract.
+
+Data Destinations: The transformed data will be loaded into Azure Cosmos DB, SQL Server, and saved in Parquet format in Azure Blob Storage.
+
+
+3. Data Flow and Transformation Logic
+
+
+---
+
+Step 1: Data Extraction
+
+1. File Reading: The raw data, stored in fixed-length file format, will be read from Azure Blob Storage. These files contain details about Agreement Contracts and Entities involved.
+
+
+2. File Unzipping: Data will be processed from zipped archives to extract all files for further transformation.
+
+
+3. Record Classification: The records will be classified based on the source record type, with each record corresponding to an Agreement Contract or an Entity. The system will ensure that all records are properly identified and ordered by their source record type.
+
+
+
+
+---
+
+Step 2: Data Transformation
+
+1. Agreement Contract to Entity Relationship Mapping:
+
+Agreement Contracts can be associated with multiple Entities, and each Entity can participate in multiple contracts. This relationship is established using a mapping table.
+
+For example, a Joint Account may have two Entities associated with it. The system will track these relationships for proper data derivation.
+
+
+
+2. Deriving Attributes for Each Entity:
+
+The transformation process will derive certain attributes for each Entity, such as:
+
+Ownership Percentage: For joint accounts, the ownership of the account will be divided among the Entities equally or based on predefined business logic.
+
+Account Type: The type of the account (e.g., "Joint Tenants" or "Tenants in Common") will be derived based on the associated Agreement Contract.
+
+Account Balance Distribution: The balance of an account will be calculated and assigned to each Entity based on the ownership percentage.
+
+Beneficiary Information: This could include details about which Entity has primary control or beneficiary rights on the account.
+
+
+
+
+3. Business Rules Execution:
+
+The business rules library will be executed to apply logic for calculating derived attributes such as the Ownership Percentage or Account Type based on the Agreement Contract data.
+
+
+
+4. Data Enrichment:
+
+After deriving attributes, the system will also update any additional fields or calculated values needed for reporting or further processing. For example, if an Entity changes its role in the contract, it will trigger the recalculation of certain attributes.
+
+
+
+
+
+---
+
+Step 3: Storing Transformed Data
+
+1. Parquet Format Storage:
+
+Transformed data will be saved in Parquet format, a columnar storage format, in Azure Blob Storage. This format allows for efficient storage and querying of large datasets.
+
+The data will be ordered by Entity ID to ensure consistency and optimal performance for downstream processing.
+
+
+
+2. Loading into Databases:
+
+After the transformations are completed, the data will be written to two databases:
+
+Azure Cosmos DB (for NoSQL storage)
+
+SQL Server (for relational storage)
+
+
+Both databases will be updated using Databricks connectors to ensure the data is correctly loaded and indexed for future queries and reporting.
+
+
+
+
+
+---
+
+4. Data Recalculation and Updates
+
+After the transformation process, periodic updates will be required to recalculate derived attributes, especially when the underlying data changes (such as updates to the Agreement Contract or when an Entity joins or leaves a contract).
+
+1. Recalculation of Attributes:
+
+When a new Entity is added to an Agreement Contract, the system will recalculate the Ownership Percentage, Account Type, and other related attributes for all affected Entities.
+
+
+
+2. Incremental Updates:
+
+The system will also support incremental updates where only the changed records (e.g., a modified Entity or Agreement Contract) trigger the recalculation of derived attributes.
+
+
+
+
+
+---
+
+5. High-Level Architecture
+
+
+---
+
+Data Flow Diagram:
+
+1. Extract:
+
+Raw fixed-length files (zip format) stored in Azure Storage.
+
+Files are read and unzipped using Apache Spark (Databricks).
+
+
+
+2. Transform:
+
+Extracted data is loaded into a Spark DataFrame.
+
+Transformation processes, including deriving attributes for each Entity (e.g., ownership percentage, account balance share), are applied.
+
+Business rules are executed to apply additional transformations and recalculations.
+
+
+
+3. Load:
+
+Transformed data is saved in Parquet format in Azure Blob Storage.
+
+Data is then loaded into Cosmos DB and SQL Server for further use.
+
+
+
+
+
+---
+
+6. Key Business Rules
+
+Some of the core business rules include:
+
+1. Ownership Calculation: For Joint Accounts, ownership is shared equally between all Entities unless otherwise specified.
+
+
+2. Account Type Determination: The Account Type (e.g., "Joint Tenants" or "Tenants in Common") will be derived based on the number of Entities in the contract.
+
+
+3. Balance Sharing: The Account Balance will be distributed among the Entities according to the derived Ownership Percentage.
+
+
+4. Beneficiary Rules: Rules for determining which Entity is the primary or secondary beneficiary, if applicable, based on the Agreement Contract.
+
+
+
+
+---
+
+7. Technologies Used
+
+Apache Spark (Databricks): Used for processing large datasets, performing transformations, and executing business rules.
+
+Azure Blob Storage: For storing raw data and transformed Parquet files.
+
+Azure Cosmos DB: For NoSQL storage of transformed data.
+
+SQL Server: For relational storage of transformed data.
+
+Parquet Format: Efficient columnar storage for large datasets.
+
+
+
+---
+
+8. Conclusion
+
+This solution leverages Apache Spark for large-scale data processing and transformation, ensuring that the derived attributes for each Entity are calculated based on the Agreement Contract and other related business rules. The transformed data is then stored efficiently in both Azure Cosmos DB and SQL Server for further use. The process ensures accuracy, scalability, and ease of maintenance, handling the dynamic nature of the Entity-Agreement Contract relationships and recalculating attributes as necessary.
+
+
+---
+
+This document provides a high-level design of the system. For further refinement, you may need to add more specific details about data formats, APIs, or specific business rules. Let me know if you need to include or adjust any particular section of the design!
+
+
+
+
+
+
+
+
+
+
 User Story: Trigger Databricks Job to Read Files from Azure Storage
 
 Why:
