@@ -1,6 +1,36 @@
 
 ```code
 
+
+
+
+
+
+Certainly! Below is a revised version with alternative names that I will use for the application-specific components. You can replace these with the exact names from your environment if needed.
+
+
+---
+
+The Initial Load process is a critical step in migrating data from the Legacy Data System to the Business Party Database (referred to as BPEP). This process ensures that the existing Entity Data (referred to as BC) stored in various legacy tables is properly transferred and consolidated into a new format for further processing. The source data is captured in batch files from multiple tables within the Legacy System Database (referred to as LSD), such as ENTITY_DETAILS, ENTITY_CORE_DATA, and others, each containing specific details about the business contact.
+
+These batch files are transferred to an Azure Blob Storage, from where they are processed by the Initial Data Aggregator component. This component is responsible for reading the multiple LSD batch files, extracting and combining the scattered data, and filtering out irrelevant business contacts (e.g., those without a valid 'Party ID' or owned by specific organizations like XYZ Corp, ABC Ltd, or 123 Group). Once the data is consolidated into a single record per Business Entity (BC), new files are generated, ready to be ingested by the Data Ingestion Processor for further updates to the Business Party Database.
+
+This procedure is crucial when performing bulk updates, such as data reconciliation or initial migrations, ensuring that only relevant and accurate data is mapped to the Business Party Database (BPEP), facilitating more efficient processing and system integrity. The process is executed in Azure Databricks to handle large-scale data transformations and ensure seamless integration with the BPEP system.
+
+
+---
+
+
+
+
+
+
+
+
+.
+
+
+
 Introduction:
 
 The initial load and ongoing data processing for the system are critical to ensuring that the databases are properly populated and maintained for the live applications. The process includes both a one-time initialization phase to populate data across all necessary systems and a continuous process for recalculating and updating derived attributes to ensure the integrity of the data.
