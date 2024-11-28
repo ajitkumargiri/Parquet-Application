@@ -1,6 +1,74 @@
 
 ```code
 
+Introduction:
+
+The initial load and ongoing data processing for the system are critical to ensuring that the databases are properly populated and maintained for the live applications. The process includes both a one-time initialization phase to populate data across all necessary systems and a continuous process for recalculating and updating derived attributes to ensure the integrity of the data.
+
+Scope:
+
+This document outlines the scope of the initial load, data transformation, storage, and recalculation processes across two distinct databases: Azure Cosmos DB and SQL Server. The processes will ensure the accurate and timely transformation, enrichment, and storage of data to support the application’s functionality and reporting requirements.
+
+End-to-End Process Orchestration:
+
+1. Initial Load: The initial load is a one-time activity performed before the system is made live for consumers. It ensures that the required data is populated in both the SQL Server and Cosmos DB databases, enabling smooth operations and data availability when the applications go live.
+
+
+2. Data Transformation and Enrichment: Once the data is ingested, the system transforms and enriches it based on defined rules. This includes the derivation of key attributes, as well as recalculating values based on any changes to entities or contract roles.
+
+
+3. Storing Transformed Data: The transformed data is saved in a columnar storage format (Parquet) in Azure Blob Storage. The data is organized efficiently by Entity ID to ensure optimal performance. It is then loaded into the SQL Server and Cosmos DB databases for relational and NoSQL storage, respectively.
+
+
+4. Recalculation and Incremental Updates: After the initial data load, the system will periodically recalculate attributes and support incremental updates. Any changes to underlying data, such as an updated Agreement Contract or the addition/removal of an entity, will trigger recalculations of affected attributes.
+
+
+
+Application Components Overview:
+
+Databricks: The core platform for processing and transforming data, responsible for executing data transformation logic, recalculating attributes, and loading data into storage.
+
+Azure Blob Storage: A scalable and cost-effective storage solution where transformed data is stored in Parquet format.
+
+Azure Cosmos DB & SQL Server: Two distinct databases used for NoSQL and relational data storage, respectively, ensuring both flexibility and performance for different types of queries and workloads.
+
+
+Component Design:
+
+Data Ingestion and Transformation Layer: Utilizes Databricks to perform data transformations and apply enrichment logic. This layer is responsible for deriving attributes, recalculating values, and preparing the data for storage.
+
+Storage Layer: Data is stored in Parquet format within Azure Blob Storage for efficient, columnar storage. Post-transformation, data is loaded into SQL Server for relational storage and Cosmos DB for NoSQL storage, utilizing Databricks connectors to ensure efficient and reliable data insertion.
+
+Recalculation Engine: A background process responsible for recalculating attributes when there are changes in the underlying data, such as when an Entity is added or removed from a contract, ensuring that downstream processes and reporting are up-to-date.
+
+
+Technology Used:
+
+Azure Cosmos DB: A globally distributed NoSQL database service used for high-performance, low-latency access to non-relational data.
+
+SQL Server: A relational database management system used for structured data storage and complex queries.
+
+Azure Blob Storage: A cloud-based storage solution for storing large volumes of data in a cost-effective and scalable manner.
+
+Databricks: A unified analytics platform used for big data processing, transformations, and orchestration, leveraging Apache Spark for distributed data processing.
+
+Parquet Format: A columnar data format used to store large datasets efficiently, providing optimized storage and query performance.
+
+Databricks Connectors: Used to integrate and load data directly into Azure Cosmos DB and SQL Server from Databricks, ensuring seamless data movement between platforms.
+
+
+This system design ensures that the data is handled efficiently, accurately, and reliably throughout its lifecycle, from the initial load through to periodic updates and recalculations.
+
+
+
+
+
+
+
+
+
+
+
 High-Level Design (HLD) Document
 
 
