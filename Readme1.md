@@ -1,5 +1,102 @@
 ```code
 
+
+million records for each solution, let’s estimate the resources and cost components for Databricks, Azure Batch, ADF, Cosmos DB, SQL Server, and Azure Storage. The assumptions will include approximate processing time, data size, and the resources required for the process.
+
+Assumptions:
+Data Size: Assuming the COBOL file size is 1 TB for 10 million records.
+Processing Time:
+Transformation and loading take 4 hours.
+Data transfer time depends on size and speed (e.g., 2 GB/min for network transfers).
+Storage: Final processed data is ~500 GB (compressed data in Cosmos DB and SQL Server).
+Resource Utilization: Scaled resources for one-time processing.
+Solution 1: Azure Batch + Databricks
+Cost Breakdown:
+
+Azure Databricks:
+Cluster: Standard cluster (4 nodes, 16 cores total) for transformation.
+Cost: 4 DBUs/node x $0.3/DBU/hour x 4 hours = $19.20.
+Azure Batch:
+VM pool: 10 Standard D2s v3 VMs (8 GB RAM, 2 cores) for 4 hours.
+Cost: 10 VMs x $0.096/hour x 4 hours = $3.84.
+Azure Storage:
+Input data (1 TB): Hot tier storage (~$0.018/GB/month).
+Cost: 1 TB x $0.018 = $18.00.
+Cosmos DB:
+Throughput: 50,000 RUs for 1 hour (short burst).
+Cost: 50,000 RUs x $0.008/hour = $0.40.
+SQL Server:
+Standard tier: Compute + storage.
+Cost: $0.20/GB for 500 GB = $100.00.
+ADF Triggering:
+Pipeline cost: Single pipeline trigger for the batch job.
+Cost: ~$0.0025 = Negligible.
+Total Estimated Cost for Solution 1: $141.44
+
+Solution 2: Azure Data Factory (ADF) + Databricks
+Cost Breakdown:
+
+Azure Databricks:
+Same cluster and time as above.
+Cost: $19.20.
+Azure Data Factory:
+Data flow activity: Processing 1 TB input file.
+Cost: 4 hours x $0.25/hour x 4 = $1.00.
+Data movement: 1 TB x $0.25/GB = $250.00.
+Azure Storage:
+Same as above.
+Cost: $18.00.
+Cosmos DB:
+Same as above.
+Cost: $0.40.
+SQL Server:
+Same as above.
+Cost: $100.00.
+Total Estimated Cost for Solution 2: $388.60
+
+Solution 3: Databricks End-to-End
+Cost Breakdown:
+
+Azure Databricks:
+Larger cluster for full processing (6 nodes, 24 cores).
+Processing time: ~6 hours (end-to-end).
+Cost: 6 DBUs/node x $0.3/DBU/hour x 6 hours = $32.40.
+Azure Storage:
+Same as above.
+Cost: $18.00.
+Cosmos DB:
+Throughput: Higher RUs for direct data ingestion (100,000 RUs for 1 hour).
+Cost: 100,000 RUs x $0.008/hour = $0.80.
+SQL Server:
+Same as above.
+Cost: $100.00.
+Total Estimated Cost for Solution 3: $151.20
+
+Comparison Table
+Component	Solution 1: Batch + Databricks	Solution 2: ADF + Databricks	Solution 3: Databricks End-to-End
+Databricks	$19.20	$19.20	$32.40
+Azure Batch/ADF	$3.84	$251.00	N/A
+Azure Storage	$18.00	$18.00	$18.00
+Cosmos DB	$0.40	$0.40	$0.80
+SQL Server	$100.00	$100.00	$100.00
+Total	$141.44	$388.60	$151.20
+Recommendation
+Solution 1 (Azure Batch + Databricks) is the most cost-effective option for processing 10 million records with balanced resource usage.
+Solution 3 (Databricks End-to-End) simplifies the architecture further but costs slightly more due to increased Databricks utilization.
+Solution 2 (ADF + Databricks) is significantly more expensive due to ADF’s data movement charges for large files.
+
+
+
+
+
+
+
+
+
+
+
+
+
 Chat history
 
 Open sidebar
