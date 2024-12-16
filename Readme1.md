@@ -1,4 +1,19 @@
 ```code
+Failure Scenarios and How They Are Handled
+Scenario	Handling
+SQL Server Down	Kafka retries the message. SQL write will succeed when SQL Server becomes available.
+Cosmos DB Down	Processing halts. Kafka retries the message. Cosmos write is retried idempotently.
+Kafka Down	Processing halts. Kafka retries the message once Kafka is back up.
+Kafka Offset Not Acknowledged	The message is retried from the source topic. SQL and Cosmos operations are idempotent.
+Message Already Processed (COMPLETED)	Message is skipped entirely.
+Benefits of This Approach
+
+
+
+
+
+
+
 
 
 
