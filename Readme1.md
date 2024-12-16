@@ -1,4 +1,76 @@
 ```code
+import com.github.javafaker.Faker;
+
+import java.lang.reflect.Field;
+
+public class ObjectPopulator {
+
+    private static final Faker faker = new Faker();
+
+    public static <T> T populateObject(Class<T> clazz) throws Exception {
+        // Create a new instance of the class
+        T instance = clazz.getDeclaredConstructor().newInstance();
+
+        // Populate fields
+        for (Field field : clazz.getDeclaredFields()) {
+            field.setAccessible(true);
+
+            if (field.getType().equals(String.class)) {
+                field.set(instance, faker.lorem().word());
+            } else if (field.getType().equals(int.class) || field.getType().equals(Integer.class)) {
+                field.set(instance, faker.number().numberBetween(1, 100));
+            } else if (field.getType().equals(double.class) || field.getType().equals(Double.class)) {
+                field.set(instance, faker.number().randomDouble(2, 1, 100));
+            } else if (field.getType().equals(boolean.class) || field.getType().equals(Boolean.class)) {
+                field.set(instance, faker.bool().bool());
+            } else {
+                // If it's a custom object, recursively populate it
+                Object nestedObject = populateObject(field.getType());
+                field.set(instance, nestedObject);
+            }
+        }
+
+        return instance;
+    }
+
+    public static void main(String[] args) throws Exception {
+        Order order = populateObject(Order.class);
+        System.out.println(order);
+    }
+}
+
+// Sample classes
+class Order {
+    private String customerName;
+    private int quantity;
+    private Address shippingAddress;
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "customerName='" + customerName + '\'' +
+                ", quantity=" + quantity +
+                ", shippingAddress=" + shippingAddress +
+                '}';
+    }
+}
+
+class Address {
+    private String street;
+    private String city;
+    private String state;
+    private String zipCode;
+
+    @Override
+    public String toString() {
+        return "Address{" +
+                "street='" + street + '\'' +
+                ", city='" + city + '\'' +
+                ", state='" + state + '\'' +
+                ", zipCode='" + zipCode + '\'' +
+                '}';
+    }
+}
 
 
 
