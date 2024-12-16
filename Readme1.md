@@ -1,4 +1,163 @@
 ```code
+
+import com.github.javafaker.Faker;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.util.*;
+
+public class ObjectPopulator {
+
+    private static final Faker faker = new Faker();
+    private static final Random random = new Random();
+
+    public static <T> T populateObject(Class<T> clazz) throws Exception {
+        // Create a new instance of the class
+        T instance = clazz.getDeclaredConstructor().newInstance();
+
+        // Populate fields
+        for (Field field : clazz.getDeclaredFields()) {
+            field.setAccessible(true);
+
+            if (field.getType().equals(String.class)) {
+                field.set(instance, faker.lorem().word());
+            } else if (field.getType().equals(int.class) || field.getType().equals(Integer.class)) {
+                field.set(instance, random.nextInt(100));
+            } else if (field.getType().equals(long.class) || field.getType().equals(Long.class)) {
+                field.set(instance, random.nextLong());
+            } else if (field.getType().equals(double.class) || field.getType().equals(Double.class)) {
+                field.set(instance, random.nextDouble());
+            } else if (field.getType().equals(float.class) || field.getType().equals(Float.class)) {
+                field.set(instance, random.nextFloat());
+            } else if (field.getType().equals(boolean.class) || field.getType().equals(Boolean.class)) {
+                field.set(instance, random.nextBoolean());
+            } else if (field.getType().equals(char.class) || field.getType().equals(Character.class)) {
+                field.set(instance, (char) (random.nextInt(26) + 'a'));
+            } else if (field.getType().equals(byte.class) || field.getType().equals(Byte.class)) {
+                field.set(instance, (byte) random.nextInt(128));
+            } else if (field.getType().equals(short.class) || field.getType().equals(Short.class)) {
+                field.set(instance, (short) random.nextInt(Short.MAX_VALUE));
+            } else if (field.getType().isEnum()) {
+                // Handle enum types
+                Object[] enumConstants = field.getType().getEnumConstants();
+                field.set(instance, enumConstants[random.nextInt(enumConstants.length)]);
+            } else if (field.getType().isArray()) {
+                // Handle array types
+                int length = random.nextInt(5) + 1; // Random array length between 1 and 5
+                Object array = Array.newInstance(field.getType().getComponentType(), length);
+                for (int i = 0; i < length; i++) {
+                    Array.set(array, i, faker.lorem().word()); // Populate arrays with fake Strings
+                }
+                field.set(instance, array);
+            } else if (List.class.isAssignableFrom(field.getType())) {
+                // Handle List and other collections
+                populateCollection(field, instance);
+            } else {
+                // If it's a custom object, recursively populate it
+                Object nestedObject = populateObject(field.getType());
+                field.set(instance, nestedObject);
+            }
+        }
+
+        return instance;
+    }
+
+    private static void populateCollection(Field field, Object instance) throws Exception {
+        // Get the generic type of the List
+        ParameterizedType listType = (ParameterizedType) field.getGenericType();
+        Class<?> genericType = (Class<?>) listType.getActualTypeArguments()[0];
+
+        // Create a List instance
+        Collection<Object> collection = (Collection<Object>) field.getType().getDeclaredConstructor().newInstance();
+
+        // Populate the list with random values of the appropriate type
+        for (int i = 0; i < random.nextInt(5) + 1; i++) {  // Random List size between 1 and 5
+            Object element = populateObject(genericType);
+            collection.add(element);
+        }
+
+        // Set the populated collection to the field
+        field.set(instance, collection);
+    }
+
+    public static void main(String[] args) throws Exception {
+        // Test the populator
+        Order order = populateObject(Order.class);
+        System.out.println(order);
+    }
+}
+
+// Sample Enum
+enum OrderStatus {
+    PENDING,
+    SHIPPED,
+    DELIVERED,
+    CANCELLED
+}
+
+// Sample classes
+class Order {
+    private String customerName;
+    private Integer quantity;
+    private Long orderId;
+    private Double price;
+    private Boolean isPaid;
+    private Address shippingAddress;
+    private OrderStatus status; // Enum field
+    private List<Item> items;  // List of custom objects
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "customerName='" + customerName + '\'' +
+                ", quantity=" + quantity +
+                ", orderId=" + orderId +
+                ", price=" + price +
+                ", isPaid=" + isPaid +
+                ", shippingAddress=" + shippingAddress +
+                ", status=" + status +
+                ", items=" + items +
+                '}';
+    }
+}
+
+class Address {
+    private String street;
+    private String city;
+    private String state;
+    private Integer zipCode;
+    private long buildingNumber;
+
+    @Override
+    public String toString() {
+        return "Address{" +
+                "street='" + street + '\'' +
+                ", city='" + city + '\'' +
+                ", state='" + state + '\'' +
+                ", zipCode=" + zipCode +
+                ", buildingNumber=" + buildingNumber +
+                '}';
+    }
+}
+
+class Item {
+    private String name;
+    private Integer quantity;
+
+    @Override
+    public String toString() {
+        return "Item{" +
+                "name='" + name + '\'' +
+                ", quantity=" + quantity +
+                '}';
+    }
+}
+
+
+
+
+
 import com.github.javafaker.Faker;
 
 import java.lang.reflect.Array;
