@@ -2,6 +2,47 @@
 
 
 
+Here’s a list of exception class names that can occur when SQL Server is unavailable in Azure:
+
+java.sql.SQLRecoverableException
+java.net.SocketTimeoutException
+java.net.ConnectException
+com.microsoft.sqlserver.jdbc.SQLServerException
+java.sql.SQLException
+
+
+
+
+
+You said:
+Same for Cosmosdb unavailability 
+ChatGPT said:
+ChatGPT
+Here’s a list of exception class names that can occur when Azure Cosmos DB is unavailable:
+
+com.azure.cosmos.CosmosException
+java.net.SocketTimeoutException
+java.net.ConnectException
+java.util.concurrent.TimeoutException
+java.lang.IllegalStateException
+javax.net.ssl.SSLException
+
+
+
+
+
+Is this conversation helpful so far?
+
+
+
+
+
+
+
+
+
+ChatGPT can mak
+
 Here is a structured table based on the provided information:
 
 Scenario	Cosmos DB	SQL	Action/Status
