@@ -1,5 +1,26 @@
 ```code
 
+
+
+Here is a structured table based on the provided information:
+
+Scenario	Cosmos DB	SQL	Action/Status
+1. Cosmos DB available, SQL unavailable	Available	Unavailable	- Send Kafka ACK false at the start of the process.
+2. Cosmos DB unavailable, SQL available	Unavailable	Available	- Functionally not possible (as read call occurs before transformation).
+- Cover by not saving transformed data to SQL.
+- Retry later, process status set to PROCESSING.
+3. Cosmos DB unavailable, SQL unavailable	Unavailable	Unavailable	- Send Kafka ACK false at the start of the process.
+4. Cosmos DB available, SQL available	Available	Available	- Save status to NOT SENT.
+- Process during retry, Kafka publish only.
+Let me know if this matches your expectations or needs further refinement!
+
+
+
+
+
+
+
+
 Hi [Team Member's Name],
 
 Thank you for sharing your thoughts and the detailed approach. After reviewing your solution, I wanted to propose a slightly different approach for handling message reprocessing, especially in cases where messages are re-consumed from Kafka due to a failure (such as issues with Kafka publishing).
