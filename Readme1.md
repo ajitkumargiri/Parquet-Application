@@ -1,5 +1,19 @@
 ```code
 
+# Example in PySpark
+from py4j.java_gateway import java_import
+
+# Import your class from the JAR
+java_import(spark._jvm, "com.example.YourClassName")
+
+# Call a static method
+result = spark._jvm.com.example.YourClassName.yourMethod()
+print(result)
+
+
+
+
+
 Certainly! Here’s a more concise version:
 
 
