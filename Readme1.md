@@ -1,5 +1,210 @@
 ```code
 
+
+
+Execution Time Calculation
+Time per record: 500 milliseconds = 0.5 seconds
+Total records: 10,000,000
+Total processing time (sequentially):
+10
+,
+000
+,
+000
+×
+0.5
+=
+5
+,
+000
+,
+000
+ 
+seconds
+=
+1
+,
+388.9
+ 
+hours (sequential processing)
+.
+10,000,000×0.5=5,000,000seconds=1,388.9hours (sequential processing).
+If processed in parallel, the time will depend on:
+
+Parallelism: The number of parallel tasks (partitions).
+Cluster Size: The number of worker nodes and cores.
+2. Parallel Execution
+Let’s assume we’re using Azure Databricks with two configurations:
+
+Scenario 1: 160 Tasks
+Each task processes:
+10
+,
+000
+,
+000
+160
+=
+62
+,
+500
+ 
+records per task.
+160
+10,000,000
+
+ =62,500records per task.
+Time per task:
+62
+,
+500
+×
+0.5
+=
+31
+,
+250
+ 
+seconds
+=
+8.7
+ 
+hours.
+62,500×0.5=31,250seconds=8.7hours.
+Total execution time = 8.7 hours (as tasks run in parallel).
+Scenario 2: 320 Tasks
+Each task processes:
+10
+,
+000
+,
+000
+320
+=
+31
+,
+250
+ 
+records per task.
+320
+10,000,000
+
+ =31,250records per task.
+Time per task:
+31
+,
+250
+×
+0.5
+=
+15
+,
+625
+ 
+seconds
+=
+4.34
+ 
+hours.
+31,250×0.5=15,625seconds=4.34hours.
+Total execution time = 4.34 hours.
+3. Azure Databricks Cluster Cost
+Assumptions:
+VM Size: Standard_DS3_v2 (4 cores, 14 GB RAM).
+Price per VM/hour: $0.35.
+DBU Rate: $0.15 per DBU/hour for Jobs Compute workload.
+DBU Consumption: 0.75 DBU/hour per VM.
+Cost Calculations
+Scenario 1: 160 Tasks (8.7 hours)
+Cluster Size: 40 Standard_DS3_v2 VMs (each VM handles 4 tasks).
+VM Cost:
+40
+×
+0.35
+×
+8.7
+=
+121.8
+ 
+USD.
+40×0.35×8.7=121.8USD.
+DBU Cost:
+40
+×
+0.75
+×
+8.7
+×
+0.15
+=
+39.15
+ 
+USD.
+40×0.75×8.7×0.15=39.15USD.
+Total Cost:
+121.8
++
+39.15
+=
+160.95
+ 
+USD.
+121.8+39.15=160.95USD.
+Scenario 2: 320 Tasks (4.34 hours)
+Cluster Size: 80 Standard_DS3_v2 VMs (each VM handles 4 tasks).
+VM Cost:
+80
+×
+0.35
+×
+4.34
+=
+121.52
+ 
+USD.
+80×0.35×4.34=121.52USD.
+DBU Cost:
+80
+×
+0.75
+×
+4.34
+×
+0.15
+=
+39.03
+ 
+USD.
+80×0.75×4.34×0.15=39.03USD.
+Total Cost:
+121.52
++
+39.03
+=
+160.55
+ 
+USD.
+121.52+39.03=160.55USD.
+Summary
+Scenario	Parallelism (Tasks)	Time (Hours)	Cost (USD)
+Scenario 1	160 Tasks	8.7	$160.95
+Scenario 2	320 Tasks	4.34	$160.55
+Recommendation
+320 Tasks is preferred as it reduces processing time to 4.34 hours with nearly identical cost.
+Use Azure Pricing Calculator to adjust estimates based on your region and exact VM configurations.
+
+
+
+
+
+
+
+
+
+
+
+ChatGPT 
+
 Calculating Time for Processing 10 Million Records in Databricks
 If processing 1 record takes 1 second, sequential processing would take an unmanageable amount of time. Databricks, however, leverages parallel processing using Spark's distributed architecture, which allows you to process records efficiently across multiple nodes and cores.
 
