@@ -1,4 +1,47 @@
 ```code
+
+import org.apache.avro.io.Encoder;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.avro.specific.SpecificRecord;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+public class AvroToJsonUtil {
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Converts an Avro SpecificRecord object to a plain JSON string.
+     *
+     * @param avroObject the Avro SpecificRecord object
+     * @return a plain JSON string
+     */
+    public static String toJson(SpecificRecord avroObject) {
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            // Create a DatumWriter for the Avro schema
+            DatumWriter<SpecificRecord> writer = new SpecificDatumWriter<>(avroObject.getSchema());
+
+            // Create Avro JSON encoder
+            Encoder jsonEncoder = EncoderFactory.get().jsonEncoder(avroObject.getSchema(), stream);
+
+            // Write the Avro object to JSON
+            writer.write(avroObject, jsonEncoder);
+            jsonEncoder.flush();
+
+            // Parse and return plain JSON string using Jackson
+            String rawJson = stream.toString(); // Contains escaped quotes
+            return objectMapper.readTree(rawJson).toString(); // Clean, plain JSON
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to convert Avro object to JSON", e);
+        }
+    }
+}
+
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
