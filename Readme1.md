@@ -1,5 +1,180 @@
 ```code
 
+Here is the expanded list of user stories and the technical details for each one, covering both the Java application development for user story 2 and the Databricks pipeline for the remaining user stories:
+
+User Story 2: Transformation & Business Rule Logic Execution (Full Java Application)
+As a business rules developer,
+I want to implement a Java application that applies transformation rules and business rules to the unified user data,
+so that the employee model, relationships, and derived data are accurately generated and updated.
+
+Technical Details for Java Application Development:
+Input Data Handling
+
+Use Apache Parquet libraries or Spark libraries (like Apache Arrow or ParquetReader) to load the unified user model stored in Parquet format.
+Validate the schema and structure of the incoming data to ensure compatibility with transformation rules.
+Transformation Rules Implementation
+
+Implement Java classes for each transformation rule (e.g., mapping unified user fields to employee fields).
+Design a TransformationManager class to orchestrate the execution of transformation rules:
+Example transformations:
+Map userid → employee_id.
+Derive manager_id from user hierarchy.
+Create department and role mappings based on user employment details.
+Use a strategy pattern to make the transformation rules modular and extensible.
+Business Rule Logic Implementation
+
+Implement Java classes for applying business rules on employee data and relationships:
+Example rules:
+Validate manager-employee relationships (e.g., no circular hierarchy).
+Assign default values for missing employee data (e.g., department or role).
+Recompute derived fields if relationships are updated.
+Use a BusinessRuleEngine class to dynamically apply business rules.
+Integration with Databricks
+
+Expose the transformation and business rule logic as a REST API or a callable method using Spring Boot or a similar framework.
+Output Data Handling
+
+Save the processed data:
+Employee data → Cosmos DB using Azure Cosmos SDK for Java.
+Relationship data → SQL Server using JDBC.
+Testing and Deployment
+
+Write unit tests for transformation and business rules.
+Deploy the application to an Azure Kubernetes Service (AKS) cluster or another hosting service.
+User Story 3: Call Java Transformation Rules in Databricks
+As a data engineer,
+I want to call the Java application’s transformation logic from the Databricks pipeline,
+so that the unified user model can be transformed into an employee model.
+
+Technical Steps:
+Load the Unified User Model (Parquet) into a PySpark DataFrame.
+
+python
+Copy code
+unified_user_df = spark.read.parquet("dbfs:/mnt/adls/parquet/unified_user_model.parquet")
+Convert the PySpark DataFrame to a JSON format suitable for the Java API:
+
+python
+Copy code
+user_data_json = unified_user_df.toJSON().collect()
+Use the Databricks REST API integration or Python’s requests library to send the data to the Java transformation API:
+
+python
+Copy code
+import requests
+
+transformation_url = "http://java-api-host/transformation/apply"
+response = requests.post(transformation_url, json={"user_data": user_data_json})
+transformed_data = response.json()
+Parse the response and save the transformed employee model to Parquet format:
+
+python
+Copy code
+transformed_df = spark.read.json(sc.parallelize([transformed_data]))
+transformed_df.write.mode("overwrite").parquet("dbfs:/mnt/adls/parquet/transformed_employee_model.parquet")
+User Story 4: Call Java Business Rules for Employee Relationships
+As a data engineer,
+I want to call the Java application’s business rule logic from the Databricks pipeline,
+so that I can validate and update employee relationships.
+
+Technical Steps:
+Load the transformed employee model from Parquet:
+
+python
+Copy code
+transformed_employee_df = spark.read.parquet("dbfs:/mnt/adls/parquet/transformed_employee_model.parquet")
+Convert the employee data into JSON format for the API call:
+
+python
+Copy code
+employee_data_json = transformed_employee_df.toJSON().collect()
+Call the Java business rule API:
+
+python
+Copy code
+business_rule_url = "http://java-api-host/business-rules/apply"
+response = requests.post(business_rule_url, json={"employee_data": employee_data_json})
+updated_relationships = response.json()
+Parse the response and save the updated relationships to Parquet format:
+
+python
+Copy code
+relationships_df = spark.read.json(sc.parallelize([updated_relationships]))
+relationships_df.write.mode("overwrite").parquet("dbfs:/mnt/adls/parquet/updated_relationships.parquet")
+User Story 5: Store Final Data in Cosmos DB and SQL Server
+As a data engineer,
+I want to store the final employee data in Cosmos DB and relationship data in SQL Server,
+so that the processed data is available for downstream systems.
+
+Technical Steps:
+Load Final Data
+
+Load employee data from the transformed model:
+python
+Copy code
+employee_df = spark.read.parquet("dbfs:/mnt/adls/parquet/transformed_employee_model.parquet")
+Load relationship data from the updated relationships file:
+python
+Copy code
+relationships_df = spark.read.parquet("dbfs:/mnt/adls/parquet/updated_relationships.parquet")
+Store Employee Data in Cosmos DB
+
+Use the Azure Cosmos DB Spark Connector to write the employee data:
+python
+Copy code
+cosmos_config = {
+    "spark.cosmos.accountEndpoint": "<your_cosmos_endpoint>",
+    "spark.cosmos.accountKey": "<your_cosmos_key>",
+    "spark.cosmos.database": "EmployeeDatabase",
+    "spark.cosmos.container": "EmployeeContainer"
+}
+
+employee_df.write.format("cosmos.oltp") \
+    .options(**cosmos_config) \
+    .mode("append") \
+    .save()
+Store Relationship Data in SQL Server
+
+Use the JDBC connector to write relationship data to SQL Server:
+python
+Copy code
+sql_config = {
+    "url": "jdbc:sqlserver://<your_sql_server>:1433;databaseName=EmployeeDB",
+    "dbtable": "EmployeeRelationships",
+    "user": "<username>",
+    "password": "<password>"
+}
+
+relationships_df.write.format("jdbc") \
+    .options(**sql_config) \
+    .mode("overwrite") \
+    .save()
+Verify Data
+
+Run verification queries in both Cosmos DB and SQL Server to ensure the data was saved correctly.
+Summary of Stories
+User Story 2: Develop a full Java application for applying transformation and business rules.
+
+Input: Parquet data.
+Output: Processed employee model (stored in Cosmos DB) and relationships (stored in SQL Server).
+User Story 3: Use Databricks to call the Java transformation logic and save results to Parquet.
+
+User Story 4: Use Databricks to call Java business rule logic and save relationships to Parquet.
+
+User Story 5: Store final employee and relationship data in Cosmos DB and SQL Server using Databricks.
+
+Let me know if you'd like code samples for the Java side or further guidance!
+
+
+
+
+
+
+
+
+
+
+
 
 
 Execution Time Calculation
