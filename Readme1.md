@@ -1,4 +1,54 @@
 ```code
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.avro.io.Encoder;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.avro.specific.SpecificRecord;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+public class AvroToJsonUtil {
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * Converts an Avro SpecificRecord object to a plain JSON string.
+     *
+     * @param avroObject the Avro SpecificRecord object
+     * @param <T>        the type extending SpecificRecord
+     * @return a plain JSON string
+     */
+    public static <T extends SpecificRecord> String toJson(T avroObject) {
+        DatumWriter<T> writer = new SpecificDatumWriter<>(avroObject.getSchema());
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+
+            // Create Avro JSON Encoder
+            Encoder jsonEncoder = EncoderFactory.get().jsonEncoder(avroObject.getSchema(), stream);
+
+            // Write Avro object to JSON
+            writer.write(avroObject, jsonEncoder);
+            jsonEncoder.flush();
+
+            // Deserialize JSON string using Jackson to avoid escaped quotes
+            String jsonWithEscapedChars = stream.toString();
+            return objectMapper.readTree(jsonWithEscapedChars).toString(); // Converts to plain JSON
+
+        } catch (IOException e) {
+            log.error("Error converting Avro object to JSON: {}", e.getMessage(), e);
+        }
+
+        return null;
+    }
+}
+
+
+
+
+
+
+
 
 Here is the expanded list of user stories and the technical details for each one, covering both the Java application development for user story 2 and the Databricks pipeline for the remaining user stories:
 
