@@ -15,6 +15,64 @@ file_details = json.loads(json_input)
 # Initialize Spark session
 spark = SparkSession.builder.appName("CobrixCopybookToParquet").getOrCreate()
 
+# Convert JSON input into a DataFrame for processing
+file_df = spark.createDataFrame(file_details['files'])
+
+# Show the file details to verify the input
+file_df.show()
+
+def process_file_sequential(row):
+    """Processes each file sequentially and saves it as a Parquet file."""
+    try:
+        # Extract the file paths and output folder from the row
+        source_path = row["sourcePath"]
+        copybook_path = row["copybookPath"]
+        destination_path = row["destinationPath"]
+        
+        logging.info(f"Processing file: {source_path}")
+
+        # Use Cobrix to read the COBOL data file with the copybook (without EBCDIC)
+        df = spark.read.format("cobrix") \
+            .option("copybook", copybook_path) \
+            .load(source_path)  # No EBCDIC option provided
+
+        logging.info(f"Successfully read data file: {source_path}")
+
+        # Write the resulting DataFrame to the specified output folder in Parquet format
+        df.write.mode("overwrite").parquet(destination_path)
+
+        logging.info(f"Successfully saved data to Parquet at: {destination_path}")
+    
+    except Exception as e:
+        logging.error(f"Error processing file {source_path}: {e}")
+
+# Sequential processing of each file in the DataFrame
+for row in file_df.collect():  # Collect the rows as a list of rows
+    process_file_sequential(row)
+
+logging.info("All files have been processed sequentially.")
+
+
+
+
+
+
+
+import json
+from pyspark.sql import SparkSession
+import logging
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+# Get the JSON input from ADF
+dbutils.widgets.text("file_details", "[]")
+json_input = dbutils.widgets.get("file_details")
+file_details = json.loads(json_input)
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("CobrixCopybookToParquet").getOrCreate()
+
 # Convert JSON input into a DataFrame for parallel processing
 file_df = spark.createDataFrame(file_details['files'])
 
