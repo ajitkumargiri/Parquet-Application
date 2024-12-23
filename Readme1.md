@@ -1,6 +1,157 @@
 ```code
 
 
+
+, it is entirely possible to process multiple files in parallel within Databricks after passing a JSON with all file details from Azure Data Factory (ADF). Instead of handling parallelism in ADF, you can manage it directly in Databricks using Spark’s distributed computing capabilities. This approach can be highly efficient, as Databricks is built for large-scale parallel processing.
+
+How It Works: Parallel Processing in Databricks
+ADF Pipeline:
+
+Pass a JSON payload to the Databricks notebook containing details of all files to process.
+The JSON includes file paths, copybook locations, and any required metadata.
+Example JSON:
+
+json
+Copy code
+[
+  { "data_file_path": "/data/mainframe/file1.dat", "copybook_file_path": "/data/mainframe/copybook1.cpy", "output_folder": "/data/output/file1" },
+  { "data_file_path": "/data/mainframe/file2.dat", "copybook_file_path": "/data/mainframe/copybook2.cpy", "output_folder": "/data/output/file2" },
+  { "data_file_path": "/data/mainframe/file3.dat", "copybook_file_path": "/data/mainframe/copybook3.cpy", "output_folder": "/data/output/file3" }
+]
+Databricks Notebook:
+
+Parse the JSON payload into a DataFrame or RDD.
+Use Spark’s distributed capabilities to process all files in parallel.
+Each file is processed as a separate task within the Spark cluster.
+Step-by-Step Workflow
+1. Pass JSON from ADF to Databricks
+In the ADF Databricks Notebook Activity, pass the JSON file details as a parameter.
+Example parameter:
+json
+Copy code
+{
+  "files": [
+    { "data_file_path": "/data/mainframe/file1.dat", "copybook_file_path": "/data/mainframe/copybook1.cpy", "output_folder": "/data/output/file1" },
+    { "data_file_path": "/data/mainframe/file2.dat", "copybook_file_path": "/data/mainframe/copybook2.cpy", "output_folder": "/data/output/file2" }
+  ]
+}
+2. Parse the JSON in Databricks
+Use the json.loads() method in Python to parse the input parameter into a DataFrame or list.
+
+python
+Copy code
+import json
+from pyspark.sql import SparkSession
+
+# Input JSON passed as a parameter from ADF
+json_input = dbutils.widgets.get("file_details")
+file_details = json.loads(json_input)
+
+# Convert JSON to DataFrame for parallel processing
+spark = SparkSession.builder.getOrCreate()
+file_df = spark.createDataFrame(file_details)
+
+file_df.show()
+Example Output:
+
+data_file_path	copybook_file_path	output_folder
+/data/mainframe/file1.dat	/data/mainframe/copybook1.cpy	/data/output/file1
+/data/mainframe/file2.dat	/data/mainframe/copybook2.cpy	/data/output/file2
+3. Parallel Processing Using Spark
+Map over the DataFrame or RDD to process each file in parallel.
+
+python
+Copy code
+def process_file(row):
+    # Access file details
+    data_file = row["data_file_path"]
+    copybook_file = row["copybook_file_path"]
+    output_folder = row["output_folder"]
+    
+    # Read data and apply transformations
+    df = spark.read.format("com.databricks.spark.avro").option("copybook", copybook_file).load(data_file)
+    
+    # Perform transformation (e.g., to Parquet)
+    df.write.parquet(output_folder)
+
+# Use Spark's map to process each file in parallel
+file_df.rdd.foreach(process_file)
+4. Optimize for Parallelism
+Cluster Size:
+Adjust Databricks cluster settings (number of workers) based on the number of files and their size.
+Example: If processing 15 files, a cluster with 10 workers ensures parallelism for 10 files at a time.
+Partitioning:
+Partition large files during reading to further increase parallelism.
+Example:
+python
+Copy code
+df = spark.read.format("com.databricks.spark.avro").option("copybook", copybook_file).load(data_file).repartition(10)
+Why Process Files in Parallel on Databricks?
+Advantages
+Efficiency:
+
+Leverage Databricks’ distributed computing to process large datasets in-memory.
+Significantly reduces overall processing time compared to sequential processing.
+Scalability:
+
+Databricks’ autoscaling ensures resources are dynamically allocated for large workloads.
+Handles increasing file sizes or additional files seamlessly.
+Reduced Complexity in ADF:
+
+ADF only passes the JSON payload, leaving Databricks to handle all parallel processing.
+Dynamic and Reusable:
+
+A single notebook template can dynamically process any number of files.
+Teams only need to update the JSON input.
+Comparison of Approaches
+Approach	Processing in ADF	Processing in Databricks
+Parallelism	ForEach activity with parallelism setting	Spark parallelism across files and tasks
+Scalability	Limited by ForEach batch size	Scales dynamically with Spark cluster
+Code Complexity	Needs complex ADF pipeline	Simpler notebook with JSON input
+Performance	Slower due to pipeline overhead	Faster with in-memory parallel processing
+Dynamic Reusability	Needs additional pipeline changes for new files	Single notebook template can handle dynamic inputs
+Demo Plan
+Demo 1: Process a Single File
+Pass a single file’s details to the Databricks notebook.
+Show how it is processed into a Parquet file.
+Demo 2: Process Multiple Files Sequentially
+Pass multiple files but process them sequentially within the notebook.
+Highlight the scalability and dynamic input handling.
+Demo 3: Process Multiple Files in Parallel
+Enable Spark parallelism within the notebook.
+Demonstrate the speedup with multiple files processed simultaneously.
+Demo 4: Scalability
+Increase the number of files and cluster workers.
+Show how Databricks autoscaling handles the additional load efficiently.
+Best Practices
+Cluster Optimization:
+
+Use autoscaling to minimize costs while maximizing parallelism.
+Error Handling:
+
+Add try-catch or try-except blocks for robust error handling during file processing.
+Monitoring:
+
+Enable Databricks metrics for job monitoring.
+Use ADF activity monitoring for pipeline-level insights.
+Dynamic Reuse:
+
+Make the notebook fully dynamic so it can process any new set of files with minimal changes.
+This approach leverages Databricks’ parallel processing capabilities to handle large-scale file processing efficiently while keeping the pipeline reusable and dynamic.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Here’s a dynamic and reusable approach to write a Databricks notebook to handle 15 data files and their respective copybook files from mainframe, converting them into Parquet files dynamically. This solution integrates with Azure Data Factory (ADF) for triggering and passing dynamic parameters, ensuring reusability for all teams.
 
 Databricks Notebook: Convert Data & Copybook Files to Parquet
