@@ -1,4 +1,32 @@
 ```code
+# Step 1: Define the widget to accept input from the pipeline
+dbutils.widgets.text("json_data", "")  # Define the widget with an empty default value
+
+# Step 2: Retrieve the JSON string passed from ADF or other external service
+json_data = dbutils.widgets.get("json_data")  # Retrieve the value passed to the notebook
+print(f"Received JSON data: {json_data}")  # Debug: print the input data
+
+# Step 3: Parse the JSON string into a Python dictionary
+import json
+try:
+    data = json.loads(json_data)  # Parse the JSON string into a dictionary
+    print(f"Decoded data: {data}")  # Debug: print the parsed data
+
+    # Step 4: Access individual file details
+    file_details = data['fileDetails']
+    print(f"File Details: {file_details}")  # Process the file details further as needed
+
+except json.JSONDecodeError as e:
+    print(f"Error decoding JSON: {e}")
+
+
+
+
+
+
+
+
+
 import json
 
 # Create a widget to accept the JSON string
