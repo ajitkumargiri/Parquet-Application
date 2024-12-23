@@ -1,5 +1,165 @@
 ```code
 
+
+Here’s a dynamic and reusable approach to write a Databricks notebook to handle 15 data files and their respective copybook files from mainframe, converting them into Parquet files dynamically. This solution integrates with Azure Data Factory (ADF) for triggering and passing dynamic parameters, ensuring reusability for all teams.
+
+Databricks Notebook: Convert Data & Copybook Files to Parquet
+Objective: Create a dynamic notebook to:
+
+Read fixed-width data files dynamically using corresponding copybook files.
+Convert them to Parquet format for efficient downstream processing.
+Integrate the notebook with ADF for parameterization and automation.
+Notebook Code (Dynamic Template)
+python
+Copy code
+# Import Required Libraries
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType
+import json
+import os
+from com.databricks.spark.cobol import CobolDataFrameReader
+
+# Step 1: Read Parameters from Azure Data Factory
+dbutils.widgets.text("data_file_path", "")
+dbutils.widgets.text("copybook_file_path", "")
+dbutils.widgets.text("output_folder", "")
+dbutils.widgets.text("delimiter", "|")  # Optional, for delimited files if needed
+
+data_file_path = dbutils.widgets.get("data_file_path")  # Path to the mainframe data file
+copybook_file_path = dbutils.widgets.get("copybook_file_path")  # Path to the copybook file
+output_folder = dbutils.widgets.get("output_folder")  # Output folder to save Parquet files
+delimiter = dbutils.widgets.get("delimiter")  # Optional parameter
+
+print(f"Data File: {data_file_path}")
+print(f"Copybook File: {copybook_file_path}")
+print(f"Output Folder: {output_folder}")
+
+# Step 2: Check File Type and Read Data Dynamically
+if data_file_path.endswith(".dat"):  # Fixed-width data file
+    # Read the data file using the Copybook
+    print("Reading fixed-width data file using Copybook...")
+    df = spark.read.format("cobol") \
+        .option("copybook", copybook_file_path) \
+        .option("is_record_sequence", "false") \
+        .load(data_file_path)
+
+elif data_file_path.endswith(".csv") or data_file_path.endswith(".txt"):  # Delimited file
+    # Read the delimited file
+    print("Reading delimited data file...")
+    df = spark.read.option("delimiter", delimiter).option("header", "true").csv(data_file_path)
+
+else:
+    raise Exception("Unsupported file type. Only .dat (fixed-width), .csv, and .txt are supported.")
+
+# Step 3: Show Schema & Preview Data
+print("Schema of the DataFrame:")
+df.printSchema()
+
+print("Preview of the DataFrame:")
+df.show(10)
+
+# Step 4: Save as Parquet File Dynamically
+output_parquet_path = os.path.join(output_folder, "output.parquet")
+print(f"Saving DataFrame to Parquet at: {output_parquet_path}")
+
+df.write.mode("overwrite").parquet(output_parquet_path)
+
+print("Data successfully converted and saved as Parquet.")
+ADF Integration (Pipeline Design)
+Parameters in ADF Pipeline:
+
+Add pipeline parameters to dynamically pass the file paths and configurations:
+data_file_path
+copybook_file_path
+output_folder
+delimiter
+Lookup Activity:
+
+Use a Lookup Activity to fetch metadata (file paths, copybook paths, schemas) from a configuration table (e.g., Azure SQL or Blob Storage JSON).
+ForEach Activity:
+
+Iterate through all 15 data files using a ForEach Activity.
+Pass parameters for each file to the Databricks notebook activity.
+Databricks Notebook Activity:
+
+Pass parameters dynamically to the Databricks notebook:
+data_file_path: Path to the data file.
+copybook_file_path: Path to the corresponding copybook.
+output_folder: Output folder to store the Parquet files.
+delimiter: (Optional) If the file is delimited.
+Dynamic Configuration:
+
+Store all file configurations in an Azure SQL table or a JSON file in Azure Storage, such as:
+json
+Copy code
+[
+  {
+    "data_file_path": "/data/mainframe/file1.dat",
+    "copybook_file_path": "/data/mainframe/copybook1.cpy",
+    "output_folder": "/data/output/file1"
+  },
+  {
+    "data_file_path": "/data/mainframe/file2.dat",
+    "copybook_file_path": "/data/mainframe/copybook2.cpy",
+    "output_folder": "/data/output/file2"
+  }
+]
+Step-by-Step Pipeline Execution
+Trigger Pipeline:
+
+Manually or automatically trigger the ADF pipeline with parameters:
+Input file paths
+Copybook paths
+Output folder locations
+Trigger based on events, such as file upload to Azure Blob Storage.
+File Ingestion:
+
+ADF dynamically identifies and passes file details to Databricks for processing.
+Dynamic Processing:
+
+Databricks processes each file dynamically based on the parameters provided.
+Converts data files (fixed-width or delimited) into Parquet format.
+Parallel Execution:
+
+Enable parallel processing of files using ADF’s ForEach Activity.
+Use Databricks autoscaling clusters to scale resources dynamically.
+Output Validation:
+
+Validate the output Parquet files in the specified folders.
+Demo Plan
+Demo 1: File Conversion
+Trigger the pipeline with 1 file and its copybook.
+Show the file conversion process dynamically.
+Demo 2: Dynamic Processing
+Pass multiple files dynamically via ADF.
+Demonstrate how the pipeline scales to process all 15 files in parallel.
+Demo 3: Unified Workflow
+Integrate the pipeline with downstream processes to join and unify files.
+Highlight Parquet file generation and validation.
+Key Considerations
+Dynamic Reusability:
+
+The notebook is parameterized to handle different file types and configurations dynamically.
+Other teams can reuse the pipeline by passing their file details.
+Scalability:
+
+Use Databricks autoscaling clusters for efficient parallel processing.
+Error Handling:
+
+Implement error handling for unsupported file types or schema mismatches.
+Cost Optimization:
+
+Process files in batches to optimize cluster utilization.
+This approach provides a professional, scalable, and reusable solution for converting mainframe files to Parquet using Databricks and ADF. It ensures dynamic configuration and automation for seamless integration into enterprise workflows.
+
+
+
+
+
+
+
+
+
 Chat history
 Open sidebar
 
