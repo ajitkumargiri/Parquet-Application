@@ -1,4 +1,81 @@
 ```code
+# Import necessary libraries
+import json
+from pyspark.sql import SparkSession
+import logging
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+# Get the input JSON from ADF
+dbutils.widgets.text("input_json", "{}")
+input_json = dbutils.widgets.get("input_json")
+
+# Parse the input JSON payload from ADF
+config = json.loads(input_json)
+
+# Extract the file format (default to EBCDIC) and file configurations
+file_format = config.get("fileFormat", "EBCDIC")
+files = config.get("files", [])
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("CobrixCopybookToParquet").getOrCreate()
+
+def read_and_parse_cobol(data_file_path: str, copybook_path: str) -> 'DataFrame':
+    """Reads the COBOL data file using Cobrix and the provided copybook, and returns a DataFrame."""
+    try:
+        # Use Cobrix to read the COBOL data file with the provided copybook
+        df = spark.read.format("cobrix") \
+            .option("copybook", copybook_path) \
+            .option("isEBCDIC", "true") \
+            .load(data_file_path)
+        
+        logging.info(f"Successfully read COBOL data file: {data_file_path}")
+        return df
+    except Exception as e:
+        logging.error(f"Failed to read and parse COBOL data file {data_file_path} with copybook {copybook_path}: {e}")
+        raise
+
+def save_as_parquet(df: 'DataFrame', output_path: str) -> None:
+    """Saves the DataFrame to the specified Parquet destination."""
+    try:
+        df.write.mode("overwrite").parquet(output_path)
+        logging.info(f"Successfully saved DataFrame to Parquet at {output_path}")
+    except Exception as e:
+        logging.error(f"Failed to save DataFrame to Parquet at {output_path}: {e}")
+        raise
+
+def process_file(file_config: dict) -> None:
+    """Process a single COBOL data file using Cobrix and save it to Parquet."""
+    try:
+        # Extract file paths from the configuration
+        source_path = file_config["sourcePath"]
+        copybook_path = file_config["copybookPath"]
+        destination_path = file_config["destinationPath"]
+        
+        logging.info(f"Starting processing of COBOL data file: {source_path}")
+
+        # Read and parse the COBOL data file using Cobrix
+        df = read_and_parse_cobol(source_path, copybook_path)
+        
+        # Save the resulting DataFrame as a Parquet file to the destination path
+        save_as_parquet(df, destination_path)
+        
+        logging.info(f"Successfully processed and saved: {source_path} -> {destination_path}")
+    
+    except Exception as e:
+        logging.error(f"Error occurred while processing file {file_config['sourcePath']}: {e}")
+        raise
+
+# Process each file in the provided configuration
+for file_config in files:
+    process_file(file_config)
+
+logging.info("Processing complete for all files.")
+
+
+
+
 # Step 1: Define the widget to accept input from the pipeline
 dbutils.widgets.text("json_data", "")  # Define the widget with an empty default value
 
