@@ -1,4 +1,17 @@
 ```code
+import json
+
+# Create a widget to accept the JSON string
+dbutils.widgets.text("fileDetailsJson", "")
+
+# Retrieve the JSON string from the widget
+file_details_json = dbutils.widgets.get("fileDetailsJson")
+
+# Convert the JSON string into a Python list of dictionaries
+file_details = json.loads(file_details_json)
+
+# Example: Accessing details of the first file
+print(file_details[0]['data_file_path'])  # Output: /data/mainframe/file1.dat
 
 
 
