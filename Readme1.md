@@ -1,4 +1,85 @@
 ```code
+
+import json
+import logging
+from pyspark.sql import SparkSession
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("CobrixCopybookToParquet") \
+    .config("spark.sql.files.maxPartitionBytes", "134217728")  # 128MB per partition
+    .config("spark.sql.files.openCostInBytes", "134217728")    # 128MB open cost per file
+    .config("spark.sql.shuffle.partitions", "200")  # Increase shuffle partitions for large files
+    .config("spark.executor.memory", "8g")  # 8GB per executor
+    .config("spark.executor.cores", "4")  # 4 cores per executor
+    .config("spark.driver.memory", "8g")  # 8GB for the driver
+    .getOrCreate()
+
+def validate_input(file_details):
+    files = file_details.get("files", [])
+    if not files:
+        raise ValueError("No files provided in the JSON input.")
+    return files
+
+def process_file(file_config):
+    try:
+        source_path = file_config["sourcePath"]
+        copybook_path = file_config["copybookPath"]
+        destination_path = file_config["destinationPath"]
+        columns_to_drop = file_config.get("columnsToDrop", [])
+        split_records = file_config.get("splitRecords", "false")
+        split_size_mb = file_config.get("splitSizeMB", None)
+
+        logging.info(f"Starting processing for file: {source_path}")
+
+        cobrix_options = {
+            "copybook": copybook_path,
+            "input_split_records": split_records
+        }
+        if split_size_mb:
+            cobrix_options["input_split_size"] = split_size_mb
+
+        df = spark.read.format("cobrix").options(**cobrix_options).load(source_path)
+
+        if columns_to_drop:
+            existing_columns = df.columns
+            columns_to_drop_valid = [col for col in columns_to_drop if col in existing_columns]
+            if columns_to_drop_valid:
+                df = df.drop(*columns_to_drop_valid)
+        
+        # Write to Parquet with partitioning
+        df.write.mode("overwrite").partitionBy("transaction_date").parquet(destination_path)
+
+        logging.info(f"Successfully processed {source_path}")
+
+        return {"status": "success", "file": source_path}
+
+    except Exception as e:
+        logging.error(f"Error processing file {file_config.get('sourcePath', 'unknown')}: {e}")
+        return {"status": "failure", "file": file_config.get("sourcePath", "unknown"), "error": str(e)}
+
+# Example file config to pass to process_file
+file_config = {
+    "sourcePath": "/mnt/data/source1/datafile",
+    "copybookPath": "/mnt/copybook/emp.cob",
+    "destinationPath": "/mnt/data/destination1",
+    "columnsToDrop": ["column1", "column2"],
+    "splitRecords": "true",
+    "splitSizeMB": 500
+}
+
+process_file(file_config)
+
+
+
+
+
+
+
+
 import json
 import logging
 from pyspark.sql import SparkSession
