@@ -1,4 +1,53 @@
 ```code
+from dbruntime.dbutils import FileInfo
+from typing import List
+
+def calculate_size_mb(path: str, verbose: bool = True) -> float:
+    """
+    Calculates the total size of a folder (including subfolders) in megabytes.
+    
+    Parameters:
+        path (str): The folder path to calculate the size for.
+        verbose (bool): If True, prints the size of each file as it is processed.
+
+    Returns:
+        float: The total size of the folder in megabytes.
+    """
+    visited_paths = set()
+    stack = [path]  # Initialize the stack with the base folder
+    total_size_mb = 0.0
+
+    while stack:
+        current_path = stack.pop()
+
+        if current_path not in visited_paths:
+            visited_paths.add(current_path)
+            
+            try:
+                # List the files and directories inside the current path
+                items = dbutils.fs.ls(current_path)
+                for item in items:
+                    if item.isDir():  # If it's a directory, add it to the stack
+                        stack.append(item.path)
+                    else:  # If it's a file, add its size
+                        size_mb = item.size / 1e6
+                        total_size_mb += size_mb
+                        if verbose:
+                            print(f"{item.path}: {size_mb:.2f} MB")
+            except Exception as e:
+                if verbose:
+                    print(f"Error accessing {current_path}: {e}")
+
+    return total_size_mb
+
+# Example usage
+file_path = "/mnt/epdsa/load-source"
+folder_size_mb = calculate_size_mb(file_path, verbose=True)
+print(f"Total size of folder '{file_path}': {folder_size_mb:.2f} MB")
+
+
+
+
 
 import json
 import logging
