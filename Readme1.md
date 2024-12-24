@@ -1,5 +1,90 @@
 ```code
 
+import json
+import logging
+from pyspark.sql import SparkSession
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("CobrixCopybookToParquet") \
+    .getOrCreate()
+
+# Get JSON input from ADF
+dbutils.widgets.text("file_details", "{}")  # Default to empty JSON if not provided
+json_input = dbutils.widgets.get("file_details")
+
+try:
+    # Parse JSON input
+    file_details = json.loads(json_input)
+    files = file_details.get("files", [])
+    
+    # Validate input JSON structure
+    if not files:
+        raise ValueError("No files provided in the JSON input.")
+
+    def process_file(file_config):
+        """Processes a single file based on its configuration."""
+        try:
+            source_path = file_config["sourcePath"]
+            copybook_path = file_config["copybookPath"]
+            destination_path = file_config["destinationPath"]
+            columns_to_drop = file_config.get("columnsToDrop", [])  # Default to empty list
+
+            logging.info(f"Starting processing for file: {source_path}")
+
+            # Read the COBOL data using Cobrix with input split records for parallelism
+            df = spark.read.format("cobrix") \
+                .option("copybook", copybook_path) \
+                .option("input_split_records", "true") \
+                .load(source_path)
+
+            logging.info(f"Successfully read data file: {source_path}")
+
+            # Drop unwanted columns if specified
+            if columns_to_drop:
+                existing_columns = df.columns
+                columns_to_drop_valid = [col for col in columns_to_drop if col in existing_columns]
+                if columns_to_drop_valid:
+                    df = df.drop(*columns_to_drop_valid)
+                    logging.info(f"Removed columns for file {source_path}: {columns_to_drop_valid}")
+                else:
+                    logging.warning(f"No valid columns to drop for file {source_path}: {columns_to_drop}")
+            else:
+                logging.info(f"No columns specified to drop for file {source_path}.")
+
+            # Write the transformed DataFrame to Parquet
+            df.write.mode("overwrite").parquet(destination_path)
+            logging.info(f"Successfully saved data to Parquet at: {destination_path}")
+
+        except Exception as file_error:
+            logging.error(f"Error processing file {file_config.get('sourcePath', 'unknown')}: {file_error}")
+            raise
+
+    # Parallel processing using Spark's RDD
+    logging.info("Starting parallel processing of files.")
+    file_rdd = spark.sparkContext.parallelize(files)
+    file_rdd.foreach(process_file)
+    logging.info("All files have been processed successfully.")
+
+except Exception as e:
+    logging.error(f"Critical error in processing pipeline: {e}")
+    raise
+
+
+
+
+
+
+
+
+
+
+
+
+
 Certainly! Here's an email draft that you can use to present the demo, including technical details, pros and cons, reuse instructions, and what's next.
 
 Subject: Demo of COBOL to Parquet Conversion Pipeline – Technical Details, Features, and Next Steps
