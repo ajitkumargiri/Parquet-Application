@@ -22,6 +22,103 @@ try:
     if not files:
         raise ValueError("No files provided in the JSON input.")
 
+    # Broadcast the Spark session for use in executors
+    spark_bc = spark.sparkContext.broadcast(spark)
+
+    def process_file(file_config):
+        """
+        Function to process a single file in parallel.
+        """
+        try:
+            # Extract file paths and columns to drop
+            source_path = file_config["sourcePath"]
+            copybook_path = file_config["copybookPath"]
+            destination_path = file_config["destinationPath"]
+            columns_to_drop = file_config.get("columnsToDrop", [])  # Default to empty list
+
+            logging.info(f"Starting processing for file: {source_path}")
+
+            # Use the broadcasted Spark session
+            spark = spark_bc.value
+
+            # Read the COBOL data using Cobrix
+            df = spark.read.format("cobrix") \
+                .option("copybook", copybook_path) \
+                .load(source_path)
+
+            logging.info(f"Successfully read data file: {source_path}")
+
+            # Drop unwanted columns if specified
+            if columns_to_drop:
+                existing_columns = df.columns
+                columns_to_drop_valid = [col for col in columns_to_drop if col in existing_columns]
+                if columns_to_drop_valid:
+                    df = df.drop(*columns_to_drop_valid)
+                    logging.info(f"Removed columns for file {source_path}: {columns_to_drop_valid}")
+                else:
+                    logging.warning(f"No valid columns to drop for file {source_path}: {columns_to_drop}")
+            else:
+                logging.info(f"No columns specified to drop for file {source_path}.")
+
+            # Write the transformed DataFrame to Parquet
+            df.write.mode("overwrite").parquet(destination_path)
+            logging.info(f"Successfully saved data to Parquet at: {destination_path}")
+
+        except Exception as file_error:
+            logging.error(f"Error processing file {file_config.get('sourcePath')}: {file_error}")
+            return {"file": file_config.get("sourcePath"), "status": "FAILED", "error": str(file_error)}
+
+        # Return success result
+        return {"file": file_config.get("sourcePath"), "status": "SUCCESS"}
+
+    # Parallelize the file processing using Spark's RDD
+    file_rdd = spark.sparkContext.parallelize(files)
+    results = file_rdd.map(process_file).collect()
+
+    # Log results
+    for result in results:
+        if result["status"] == "SUCCESS":
+            logging.info(f"File processed successfully: {result['file']}")
+        else:
+            logging.error(f"File processing failed: {result['file']} - Error: {result['error']}")
+
+    logging.info("All files have been processed.")
+
+except Exception as e:
+    logging.error(f"Critical error in processing pipeline: {e}")
+    raise
+
+
+
+
+
+
+
+
+
+import json
+from pyspark.sql import SparkSession
+import logging
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("CobrixCopybookToParquet").getOrCreate()
+
+# Get JSON input from ADF
+dbutils.widgets.text("file_details", "{}")  # Default to empty JSON if not provided
+json_input = dbutils.widgets.get("file_details")
+
+try:
+    # Parse JSON input
+    file_details = json.loads(json_input)
+    files = file_details.get("files", [])
+    
+    # Validate input JSON structure
+    if not files:
+        raise ValueError("No files provided in the JSON input.")
+
     # Process each file sequentially
     for file_config in files:
         try:
