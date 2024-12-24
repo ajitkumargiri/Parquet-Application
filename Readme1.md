@@ -1,4 +1,65 @@
 ```code
+import json
+from pyspark.sql import SparkSession
+import logging
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+
+# Get the JSON input from ADF
+dbutils.widgets.text("file_details", "[]")
+json_input = dbutils.widgets.get("file_details")
+file_details = json.loads(json_input)
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("CobrixCopybookToParquet").getOrCreate()
+
+# Extract files list from JSON
+files = file_details.get("files", [])
+
+# Broadcast the list of files to workers (to avoid driver-only operations during parallel tasks)
+files_broadcast = spark.sparkContext.broadcast(files)
+
+def process_file_parallel(file_config):
+    """Processes each file in parallel and saves it as a Parquet file."""
+    try:
+        # Extract file paths from the broadcast variable
+        source_path = file_config["sourcePath"]
+        copybook_path = file_config["copybookPath"]
+        destination_path = file_config["destinationPath"]
+
+        print(f"Processing file: {source_path}")
+
+        # Use Cobrix to read the COBOL data file with the copybook
+        df = spark.read.format("cobrix") \
+            .option("copybook", copybook_path) \
+            .load(source_path)
+
+        print(f"Successfully read data file: {source_path}")
+
+        # Write the resulting DataFrame to the specified output folder in Parquet format
+        df.write.mode("overwrite").parquet(destination_path)
+
+        print(f"Successfully saved data to Parquet at: {destination_path}")
+    except Exception as e:
+        print(f"Error processing file {file_config['sourcePath']}: {e}")
+        raise
+
+# Distribute the work using Spark RDD
+file_rdd = spark.sparkContext.parallelize(files_broadcast.value)
+file_rdd.foreach(process_file_parallel)
+
+print("All files have been processed in parallel.")
+
+
+
+
+
+
+
+
+
+
 
 import json
 from pyspark.sql import SparkSession
