@@ -1,4 +1,132 @@
 ```code
+import json
+import logging
+from pyspark.sql import SparkSession
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("CobrixCopybookToParquet") \
+    .getOrCreate()
+
+# Get JSON input from ADF
+dbutils.widgets.text("file_details", "{}")  # Default to empty JSON if not provided
+json_input = dbutils.widgets.get("file_details")
+
+def validate_input(file_details):
+    """Validate input JSON structure."""
+    files = file_details.get("files", [])
+    if not files:
+        raise ValueError("No files provided in the JSON input.")
+    return files
+
+def process_file(file_config):
+    """
+    Processes a single file based on its configuration.
+    Args:
+        file_config (dict): Configuration for a single file.
+    """
+    try:
+        # Extract configurations
+        source_path = file_config.get("sourcePath")
+        copybook_path = file_config.get("copybookPath")
+        destination_path = file_config.get("destinationPath")
+        columns_to_drop = file_config.get("columnsToDrop", [])  # Default to empty list
+        split_records = file_config.get("splitRecords", "false")
+        split_size_mb = file_config.get("splitSizeMB", None)
+
+        if not source_path or not copybook_path or not destination_path:
+            raise ValueError("Missing required fields (sourcePath, copybookPath, destinationPath).")
+
+        logging.info(f"Starting processing for file: {source_path}")
+
+        # Read the COBOL data using Cobrix with dynamic options
+        cobrix_options = {
+            "copybook": copybook_path,
+            "input_split_records": split_records
+        }
+        if split_size_mb:
+            cobrix_options["input_split_size"] = split_size_mb
+
+        df = spark.read.format("cobrix").options(**cobrix_options).load(source_path)
+        logging.info(f"Successfully read data file: {source_path}")
+
+        # Drop unwanted columns if specified
+        if columns_to_drop:
+            existing_columns = df.columns
+            columns_to_drop_valid = [col for col in columns_to_drop if col in existing_columns]
+            if columns_to_drop_valid:
+                df = df.drop(*columns_to_drop_valid)
+                logging.info(f"Removed columns for file {source_path}: {columns_to_drop_valid}")
+            else:
+                logging.warning(f"No valid columns to drop for file {source_path}: {columns_to_drop}")
+        else:
+            logging.info(f"No columns specified to drop for file {source_path}.")
+
+        # Write the transformed DataFrame to Parquet
+        df.write.mode("overwrite").parquet(destination_path)
+        logging.info(f"Successfully saved data to Parquet at: {destination_path}")
+
+        return {"status": "success", "file": source_path}
+
+    except Exception as e:
+        logging.error(f"Error processing file {file_config.get('sourcePath', 'unknown')}: {e}")
+        return {"status": "failure", "file": file_config.get("sourcePath", "unknown"), "error": str(e)}
+
+def process_files_sequentially(files):
+    """
+    Process files sequentially with error handling.
+    Args:
+        files (list): List of file configurations.
+    """
+    successful_files = []
+    failed_files = []
+
+    for file_config in files:
+        result = process_file(file_config)
+        if result["status"] == "success":
+            successful_files.append(result["file"])
+        else:
+            failed_files.append(result)
+
+    return successful_files, failed_files
+
+try:
+    # Parse JSON input
+    file_details = json.loads(json_input)
+
+    # Validate input JSON structure
+    files = validate_input(file_details)
+
+    # Process files sequentially
+    logging.info("Starting sequential processing of files.")
+    successful_files, failed_files = process_files_sequentially(files)
+
+    # Summary Report
+    logging.info(f"Processing completed. Total files: {len(files)}, Successful: {len(successful_files)}, Failed: {len(failed_files)}")
+    if failed_files:
+        logging.warning(f"Failed files: {json.dumps(failed_files, indent=4)}")
+
+except Exception as e:
+    logging.error(f"Critical error in processing pipeline: {e}")
+    raise
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import json
 import logging
