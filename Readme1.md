@@ -1,5 +1,50 @@
 ```code
 
+file_path = "/dbfs/path/to/yourfile.txt"
+
+# Read the file as plain text
+lines = sc.textFile(file_path)
+
+# Extract the header (first line)
+header = lines.first()
+
+# Automatically detect column positions based on spaces in the header
+def get_column_positions(header_line):
+    import re
+    positions = []
+    columns = re.finditer(r'\S+', header_line)  # Find sequences of non-space characters
+    for match in columns:
+        start = match.start()
+        end = match.end()
+        positions.append((start, end))
+    return positions
+
+# Get column positions from the header
+positions = get_column_positions(header)
+
+# Define a function to parse each line based on column positions
+def parse_line(line, positions):
+    return [line[start:end].strip() for start, end in positions]
+
+# Parse all lines in the file
+data_rdd = lines.filter(lambda line: line != header)  # Skip the header
+parsed_data = data_rdd.map(lambda line: parse_line(line, positions))
+
+# Use the header to define column names
+column_names = [header[start:end].strip() for start, end in positions]
+
+# Convert to DataFrame
+df = parsed_data.toDF(column_names)
+
+# Show the result
+df.show()
+
+
+
+
+
+
+
 Subject: New Data Processing Solution: Features, Benefits, and Reusability
 
 Dear Team,
