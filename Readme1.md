@@ -1,4 +1,44 @@
 ```code
+from pyspark.sql import SparkSession
+from py4j.java_gateway import java_import
+import json
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("ProcessLargeDataset").getOrCreate()
+
+# Read the Parquet file into a DataFrame
+df = spark.read.parquet("/path/to/your/file.parquet")
+
+# Repartition the DataFrame to ensure parallelism
+df = df.repartition(200)  # Adjust this based on the cluster size
+
+# Define the function to process each partition
+def process_partition(partition):
+    # Import the Java class (replace with the correct package and class name)
+    java_import(spark._jvm, "com.example.MyJavaClass")  # Replace with your Java class
+    my_java_class = spark._jvm.com.example.MyJavaClass()  # Instantiate your Java class
+
+    for row in partition:
+        # Convert the row into a Python dictionary
+        record = row.asDict()  # Converts the entire row to a dictionary
+        
+        # Convert the dictionary into a JSON string
+        record_json = json.dumps(record)
+        
+        # Call the Java method with the JSON string (passing the whole record)
+        my_java_class.processRecord(record_json)  # Ensure the Java method accepts a JSON string
+
+# Convert the DataFrame to an RDD and apply foreachPartition for parallel processing
+df.rdd.foreachPartition(process_partition)
+
+
+
+
+
+
+
+
+
 import org.apache.spark.sql.SparkSession
 import com.example.MyJavaClass  // Import your Java class
 import org.json4s.native.JsonMethods._
