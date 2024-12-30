@@ -1,6 +1,46 @@
 ```code
 
 from pyspark.sql import SparkSession
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("ForeachDebugTest") \
+    .master("local[2]") \  # Use 2 cores to simulate parallelism
+    .getOrCreate()
+
+# Create a small DataFrame for testing
+data = [("Alice", 25), ("Bob", 30), ("Charlie", 35)]
+columns = ["Name", "Age"]
+df = spark.createDataFrame(data, columns)
+
+# Test foreach
+def test_foreach(row):
+    print(f"Processing row: {row}")  # This will print from the executor logs
+
+try:
+    # Apply foreach
+    df.foreach(test_foreach)
+    print("Foreach completed successfully.")
+except Exception as e:
+    print(f"Error occurred during foreach: {e}")
+
+# Stop Spark session
+spark.stop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from pyspark.sql import SparkSession
 import json
 
 # Initialize Spark session
