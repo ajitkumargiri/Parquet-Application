@@ -1,5 +1,68 @@
 ```code
 from pyspark.sql import SparkSession
+import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("ParallelJavaCallWithThreadPool").getOrCreate()
+
+# Read the Parquet file into a DataFrame
+df = spark.read.parquet("/path/to/your/file.parquet")
+
+# Repartition the DataFrame for parallel processing
+df = df.repartition(10)  # Adjust partition size based on your cluster
+
+# Initialize the Java class on the driver (access the JVM)
+java_class = spark._jvm.com.example.MyJavaClass()  # Replace with your actual Java class
+
+# Function to process each record using a ThreadPoolExecutor
+def process_record(record):
+    try:
+        # Convert the row to a dictionary and then to JSON
+        record_json = json.dumps(record)
+        
+        # Call the Java method with the JSON string
+        java_class.processRecord(record_json)
+    except Exception as e:
+        print(f"Error processing record: {e}")
+
+# Define a function to process records in parallel using ThreadPoolExecutor
+def process_partition_with_thread_pool(partition):
+    # Create a ThreadPoolExecutor with a desired number of threads (e.g., 10 threads)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # Submit tasks to the thread pool
+        futures = []
+        for row in partition:
+            record = row.asDict()  # Convert row to dictionary
+            futures.append(executor.submit(process_record, record))
+        
+        # Wait for all futures to complete
+        for future in as_completed(futures):
+            try:
+                future.result()  # If there was an exception during execution, it will be raised here
+            except Exception as e:
+                print(f"Error in future execution: {e}")
+
+# Process records in parallel using foreachPartition
+df.rdd.foreachPartition(process_partition_with_thread_pool)
+
+# Stop the Spark session after the job is done
+spark.stop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from pyspark.sql import SparkSession
 from py4j.java_gateway import java_import
 import json
 
