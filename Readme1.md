@@ -1,4 +1,52 @@
 ```code
+from pyspark.sql import SparkSession
+
+# Initialize Spark session
+spark = SparkSession.builder \
+    .appName("ForeachPartitionClusterTest") \
+    .getOrCreate()
+
+# Simulate data for testing
+data = [("Alice", 25), ("Bob", 30), ("Charlie", 35)]
+columns = ["Name", "Age"]
+
+# Create DataFrame
+df = spark.createDataFrame(data, columns)
+
+# Repartition DataFrame for parallel processing on 2 workers
+# Set the number of partitions equal to or greater than the number of workers
+df = df.repartition(2)
+
+# Debugging: Check the number of partitions and records
+print(f"Number of partitions: {df.rdd.getNumPartitions()}")
+print(f"Number of records: {df.count()}")
+
+# Define a function to process each partition
+def process_partition(partition):
+    # Simulate work per row
+    print("Processing a new partition")
+    for row in partition:
+        print(f"Processing row: {row}")  # Logs row processing
+        # Simulate processing logic here (e.g., call an external Java method)
+
+# Use foreachPartition to process partitions
+try:
+    print("Testing foreachPartition...")
+    df.rdd.foreachPartition(process_partition)
+    print("ForeachPartition completed successfully.")
+except Exception as e:
+    print(f"Error during foreachPartition: {e}")
+
+# Stop Spark session
+spark.stop()
+
+
+
+
+
+
+
+
 
 from pyspark.sql import SparkSession
 
