@@ -10,6 +10,61 @@ spark = SparkSession.builder.appName("ParallelJavaCallWithThreadPool").getOrCrea
 # Read the Parquet file into a DataFrame
 df = spark.read.parquet("/path/to/your/file.parquet")
 
+# Repartition the DataFrame for parallel processing (matching the worker configuration)
+# Here, we're using 2 partitions to match the maximum number of workers
+df = df.repartition(2)  # 2 partitions since you have 1 to 2 workers
+
+# Initialize the Java class on the driver (access the JVM)
+java_class = spark._jvm.com.example.MyJavaClass()  # Replace with your actual Java class
+
+# Function to process each record using a ThreadPoolExecutor
+def process_record(record):
+    try:
+        # Convert the row to a dictionary and then to JSON
+        record_json = json.dumps(record)
+        
+        # Call the Java method with the JSON string
+        java_class.processRecord(record_json)
+    except Exception as e:
+        print(f"Error processing record: {e}")
+
+# Function to process each partition in parallel using ThreadPoolExecutor (only on driver node)
+def process_partition_with_thread_pool(partition):
+    # Collect all rows from the partition (bring them to the driver)
+    records = [row.asDict() for row in partition]
+    
+    # Now, use ThreadPoolExecutor only on the driver node to process these records
+    with ThreadPoolExecutor(max_workers=2) as executor:  # limit the pool size to 2 workers to match your worker nodes
+        # Submit tasks to the thread pool for each record
+        futures = [executor.submit(process_record, record) for record in records]
+        
+        # Wait for all futures to complete
+        for future in futures:
+            try:
+                future.result()  # If there was an exception during execution, it will be raised here
+            except Exception as e:
+                print(f"Error in future execution: {e}")
+
+# Process records in parallel using foreachPartition (on the driver node)
+df.rdd.foreachPartition(process_partition_with_thread_pool)
+
+# Stop the Spark session after the job is done
+spark.stop()
+
+
+
+
+
+from pyspark.sql import SparkSession
+import json
+from concurrent.futures import ThreadPoolExecutor
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("ParallelJavaCallWithThreadPool").getOrCreate()
+
+# Read the Parquet file into a DataFrame
+df = spark.read.parquet("/path/to/your/file.parquet")
+
 # Repartition the DataFrame for parallel processing (on driver node only)
 df = df.repartition(10)  # Adjust partition size based on your cluster
 
