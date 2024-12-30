@@ -2,6 +2,49 @@
 
 from pyspark.sql import SparkSession
 import json
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("ParallelJavaCallWithSpark").getOrCreate()
+
+# Read the Parquet file into a DataFrame
+df = spark.read.parquet("/path/to/your/file.parquet")
+
+# Repartition the DataFrame based on the number of workers (1 to 2 workers)
+df = df.repartition(2)  # Adjust the number of partitions based on your available workers
+
+# Initialize the Java class on the driver (access the JVM)
+java_class = spark._jvm.com.example.MyJavaClass()  # Replace with your actual Java class
+
+# Function to process each record and call the Java method
+def process_record(record):
+    try:
+        # Convert the row to a dictionary and then to JSON
+        record_json = json.dumps(record)
+        
+        # Call the Java method with the JSON string
+        java_class.processRecord(record_json)
+    except Exception as e:
+        print(f"Error processing record: {e}")
+
+# Function to process each partition
+def process_partition(partition):
+    for row in partition:
+        record = row.asDict()  # Convert row to dictionary
+        process_record(record)  # Process each record
+
+# Use RDD to process records in parallel across the available workers
+df.rdd.foreachPartition(process_partition)
+
+# Stop the Spark session after the job is done
+spark.stop()
+
+
+
+
+
+
+from pyspark.sql import SparkSession
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 # Initialize Spark session
