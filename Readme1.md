@@ -1,5 +1,75 @@
 ```code
 from pyspark.sql import SparkSession
+import json
+from pyspark.sql import Row
+
+# Initialize Spark Session
+spark = SparkSession.builder \
+    .appName("TransformUserToEmployee") \
+    .config("spark.jars", "/dbfs/FileStore/jars/user-processor.jar") \  # Path to the JAR file
+    .getOrCreate()
+
+# Load the Parquet file
+parquet_file_path = "/path/to/your/parquet/file"
+df = spark.read.parquet(parquet_file_path)
+
+# Ensure enough partitions for parallel processing
+df = df.repartition(2)  # Adjust based on your cluster size
+
+# Define a function to process each partition
+def process_partition(partition):
+    from py4j.java_gateway import java_import
+
+    # Import and access the Java class
+    java_import(spark._jvm, "com.example.UserProcessor")
+
+    UserProcessor = spark._jvm.com.example.UserProcessor
+
+    # List to collect transformed Employee records
+    employees = []
+
+    for row in partition:
+        # Convert each row to a JSON string
+        row_dict = row.asDict()
+        user_json = json.dumps(row_dict)
+
+        # Call the Java method to transform the User (JSON string) into Employee
+        java_employee = UserProcessor.processUser(user_json)
+
+        # Convert Java Employee object back to Python dict
+        employees.append({
+            "id": java_employee.id(),
+            "fullName": java_employee.fullName(),
+            "age": java_employee.age()
+        })
+
+    return employees
+
+# Call the process_partition function using mapPartitions
+transformed_rdd = df.rdd.mapPartitions(process_partition)
+
+# Convert the transformed RDD back to a DataFrame
+employee_df = transformed_rdd.map(lambda x: Row(**x)).toDF(["id", "fullName", "age"])
+
+# Show the transformed DataFrame
+employee_df.show()
+
+# Stop the Spark session
+spark.stop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+from pyspark.sql import SparkSession
 
 # Initialize Spark session
 spark = SparkSession.builder \
