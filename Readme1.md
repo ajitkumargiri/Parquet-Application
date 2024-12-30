@@ -1,5 +1,103 @@
 ```code
 
+# Databricks notebook setup
+from pyspark.sql import functions as F
+from pyspark.sql.types import StringType, StructType, StructField
+import concurrent.futures
+from typing import List
+
+# Configurations
+PARQUET_FILE_PATH = "dbfs:/mnt/your-storage-path/unified_user_data.parquet"
+JAVA_LIB_PATH = "dbfs:/mnt/your-storage-path/your-java-library.jar"
+TRANSFORMATION_CLASS = "com.example.YourTransformationClass"
+OUTPUT_PATH = "dbfs:/mnt/your-storage-path/output/"
+NUM_PARTITIONS = 100  # Number of partitions for parallelism
+
+# 1. Load the unified Parquet file
+print("Loading Parquet file...")
+df = spark.read.parquet(PARQUET_FILE_PATH)
+df = df.repartition(NUM_PARTITIONS)  # Repartition for parallelism
+print(f"Total records loaded: {df.count()}")
+
+# 2. UDF to call Java library for transformation
+@F.udf(StringType())
+def call_java_library(record: str) -> str:
+    """
+    UDF to call Java library for record transformation.
+    """
+    try:
+        from py4j.java_gateway import JavaGateway, GatewayParameters
+        gateway = JavaGateway(gateway_parameters=GatewayParameters(auto_field=True))
+        
+        # Load the Java class
+        java_lib = gateway.jvm.Thread.currentThread().getContextClassLoader().loadClass(TRANSFORMATION_CLASS)
+        java_instance = java_lib.newInstance()
+        
+        # Call the Java method and return the result
+        result = java_instance.transform(record)
+        return result
+    except Exception as e:
+        print(f"Error processing record: {e}")
+        return "{}"  # Return empty JSON in case of failure
+
+# 3. Transform each record by calling the Java library
+print("Transforming records using the Java library...")
+transformed_df = df.withColumn("transformed_data", call_java_library(F.to_json(F.struct("*"))))
+
+# 4. Handle nested objects in the transformed data
+print("Extracting nested objects...")
+transformed_schema = StructType([
+    StructField("employee", StringType(), True),
+    StructField("manager", StringType(), True),
+    StructField("relationship", StringType(), True)
+])
+
+# Parse the nested JSON string into individual columns
+parsed_df = transformed_df.withColumn("parsed_data", F.from_json(F.col("transformed_data"), transformed_schema))
+parsed_df = parsed_df.select(
+    "parsed_data.employee",
+    "parsed_data.manager",
+    "parsed_data.relationship"
+)
+
+# 5. Save results back to Parquet
+print("Saving transformed data...")
+parsed_df.write.mode("overwrite").parquet(OUTPUT_PATH)
+print(f"Transformed data saved to: {OUTPUT_PATH}")
+
+# 6. Exception handling and logging
+def process_partition(partition_records: List[dict]):
+    """
+    Function to process a partition of records.
+    """
+    try:
+        # Convert to Pandas DataFrame for lightweight operations
+        import pandas as pd
+        pdf = pd.DataFrame(partition_records)
+
+        # Call the transformation logic (similar to the above)
+        pdf['transformed'] = pdf['record'].apply(call_java_library)
+
+        # Write the results back to storage (e.g., append to Parquet)
+        transformed_spark_df = spark.createDataFrame(pdf)
+        transformed_spark_df.write.mode("append").parquet(OUTPUT_PATH)
+    except Exception as e:
+        print(f"Error processing partition: {e}")
+        return False
+
+# Parallelize processing using ThreadPoolExecutor
+print("Starting parallel processing...")
+records = df.collect()  # Collect the entire dataset (for demonstration purposes)
+with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_PARTITIONS) as executor:
+    executor.map(process_partition, records)
+
+print("Processing completed!")
+
+
+
+
+
+
 file_path = "/dbfs/path/to/yourfile.txt"
 
 # Read the file as plain text
