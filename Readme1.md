@@ -1,5 +1,25 @@
 ```code
 
+
+from pyspark.sql import SparkSession
+
+# Read the Parquet file into a DataFrame
+df = spark.read.parquet("/path/to/your/file.parquet")
+
+# Define a wrapper function to call the Java method
+def call_java_method(row):
+    from py4j.java_gateway import java_import
+
+    # Access the JVM and import your Java class
+    java_import(spark._jvm, "com.example.MyJavaClass")  # Replace with your class
+    my_java_class = spark._jvm.com.example.MyJavaClass()
+
+    # Call the Java method and pass values from the row
+    my_java_class.someMethod(row["column1"], row["column2"])  # Replace columns as needed
+
+# Convert the DataFrame to an RDD and apply the function
+df.rdd.foreach(call_java_method)
+
 # Databricks notebook setup
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType, StructType, StructField
