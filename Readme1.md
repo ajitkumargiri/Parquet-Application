@@ -1,4 +1,110 @@
 ```code
+
+To read a Parquet file in Java, you'll need to use the Apache Parquet library. Below is a step-by-step guide on how to read a Parquet file in Java:
+
+1. Add Dependencies
+You need to include the required dependencies in your project. If you're using Maven, add the following dependencies in your pom.xml file:
+
+xml
+Copy code
+<dependency>
+    <groupId>org.apache.parquet</groupId>
+    <artifactId>parquet-avro</artifactId>
+    <version>1.12.0</version> <!-- Or any other version you're using -->
+</dependency>
+<dependency>
+    <groupId>org.apache.hadoop</groupId>
+    <artifactId>hadoop-common</artifactId>
+    <version>3.2.0</version> <!-- Or any version that is compatible -->
+</dependency>
+2. Create a Java Class to Read the Parquet File
+Here’s an example Java code snippet that reads a Parquet file using the ParquetReader class from the Apache Parquet library:
+
+java
+Copy code
+import org.apache.parquet.hadoop.metadata.FileMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.example.data.Group;
+import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.hadoop.api.ReadSupport;
+import org.apache.parquet.hadoop.util.HadoopInputFile;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.example.data.simple.SimpleGroupFactory;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+
+import java.io.IOException;
+
+public class ParquetFileReader {
+    public static void main(String[] args) throws IOException {
+        // Path to the Parquet file
+        String parquetFilePath = "path/to/your/file.parquet";
+        
+        // Create a Hadoop Configuration
+        Configuration configuration = new Configuration();
+
+        // Set the file system (you may need to add Hadoop file system jars depending on your environment)
+        Path path = new Path(parquetFilePath);
+        
+        // Create a Parquet Reader
+        try (ParquetReader<Group> reader = ParquetReader.builder(new GroupReadSupport(), path)
+                                                          .withConf(configuration)
+                                                          .build()) {
+            
+            Group record;
+            while ((record = reader.read()) != null) {
+                // Process each record (Group) here
+                System.out.println(record);
+            }
+        }
+    }
+}
+Explanation:
+Dependencies: You include parquet-avro and hadoop-common dependencies in your project.
+ParquetReader: This is the main class that reads a Parquet file.
+GroupReadSupport: This class is a built-in implementation of ReadSupport for reading Parquet files. It handles the conversion of rows to Group objects, which you can work with.
+Configuration: You need to create a Hadoop Configuration object.
+Reading Records: The ParquetReader.read() method reads one record at a time.
+3. Dependencies with Gradle
+If you use Gradle instead of Maven, here’s how you can include the dependencies:
+
+gradle
+Copy code
+dependencies {
+    implementation 'org.apache.parquet:parquet-avro:1.12.0'
+    implementation 'org.apache.hadoop:hadoop-common:3.2.0'
+}
+4. Handling Complex Data Types
+If your Parquet file contains more complex data types (e.g., nested fields or arrays), you may need to define a custom ReadSupport implementation or use Avro, Thrift, or another format to deserialize the data.
+
+Conclusion:
+The code above reads the Parquet file and outputs the records to the console. You can adjust the processing logic depending on your needs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from pyspark.sql import SparkSession
 
 # Initialize Spark Session
