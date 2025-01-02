@@ -1,4 +1,52 @@
 ```code
+from pyspark.sql import SparkSession
+
+# Initialize Spark Session
+spark = SparkSession.builder \
+    .appName("DebuggingInfiniteProcessing") \
+    .master("local[2]") \
+    .getOrCreate()
+
+# Create a small DataFrame for testing
+df = spark.createDataFrame([
+    (1, "Alice", 25),
+    (2, "Bob", 30),
+    (3, "John", 35)
+], ["id", "name", "age"])
+
+# Define a partition processing function
+def process_partition(partition):
+    print("Processing partition...")
+    results = []
+    for row in partition:
+        print(f"Processing row: {row}")
+        results.append(row)
+    print("Partition completed.")
+    return results
+
+# Apply the function using mapPartitions
+result_rdd = df.rdd.mapPartitions(process_partition)
+
+# Collect the results to trigger execution
+processed_rows = result_rdd.collect()
+print(processed_rows)
+
+# Write processed rows to a Parquet file
+processed_df = spark.createDataFrame(processed_rows, schema=["id", "name", "age"])
+processed_df.write.parquet("/tmp/parquet_output", mode="overwrite")
+
+# Stop Spark session
+spark.stop()
+
+
+
+
+
+
+
+
+
+
 
 from pyspark.sql import SparkSession
 
