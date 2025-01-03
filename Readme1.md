@@ -1,4 +1,101 @@
 ```code
+
+
+
+
+
+
+
+
+
+ChatGPT
+
+You said:
+I have a non spring application need to use a service class method of a spring application lib 
+How can I call that service class method with all their dependency 
+ChatGPT said:
+ChatGPT
+To use a service class from a Spring application library in a non-Spring application, you need to initialize the Spring application context manually. This ensures all the dependencies of the service class are properly resolved and injected. Here's how you can achieve this:
+
+Steps to Call a Service Class Method with Dependencies
+Add the Spring library as a dependency
+Ensure your non-Spring application includes the Spring dependencies. If you’re using Maven, add the Spring dependencies required by the library in your pom.xml.
+
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+    <version>5.3.29</version> <!-- Replace with the version used by the Spring library -->
+</dependency>
+Add the library to your project
+Include the Spring-based library (with the service class) as a dependency in your project.
+
+Create an Application Context in your non-Spring application
+Manually load the Spring context to initialize the library's beans.
+
+Example:
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class NonSpringApp {
+    public static void main(String[] args) {
+        // Load the Spring context (update MySpringConfig to match the library's configuration class)
+        ApplicationContext context = new AnnotationConfigApplicationContext(MySpringConfig.class);
+
+        // Retrieve the service bean
+        MyServiceClass myService = context.getBean(MyServiceClass.class);
+
+        // Call the method
+        myService.myMethod();
+    }
+}
+Ensure Proper Configuration
+
+If the library uses @Configuration classes to define its beans, identify the configuration class and pass it to the AnnotationConfigApplicationContext.
+If the library uses XML configuration, use ClassPathXmlApplicationContext instead.
+Example for XML-based configuration:
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public class NonSpringApp {
+    public static void main(String[] args) {
+        // Load the Spring context from an XML configuration file
+        ApplicationContext context = new ClassPathXmlApplicationContext("spring-config.xml");
+
+        // Retrieve the service bean
+        MyServiceClass myService = context.getBean(MyServiceClass.class);
+
+        // Call the method
+        myService.myMethod();
+    }
+}
+Verify Dependencies
+If the service class relies on external configurations or properties, make sure they are provided (e.g., via application.properties or other mechanisms). You can use a @PropertySource annotation in the configuration class if necessary.
+
+Handle Spring-specific Lifecycle
+If the service or any of its dependencies implement lifecycle methods (like @PostConstruct or DisposableBean), they will be called automatically when the application context is initialized or closed.
+
+Example to close the context manually:
+
+AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MySpringConfig.class);
+MyServiceClass myService = context.getBean(MyServiceClass.class);
+myService.myMethod();
+context.close(); // Ensure resources are released
+Summary
+By initializing the Spring application context manually in your non-Spring application, you can resolve and use any Spring-managed service or bean, along with all its dependencies.
+
+
+
+
+
+
+
+
+
+
+
+
 To read 12 million records from a Parquet file and process them within 8 hours using Spring Batch, we need to consider a strategy that optimizes for performance, scalability, and reliability. Here's how you can approach the problem:
 
 Approach Outline
