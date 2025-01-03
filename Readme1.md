@@ -1,5 +1,22 @@
 ```code
 
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class NonSpringApp {
+    public static void main(String[] args) {
+        // Create the context and scan the library's package
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext("com.example.library");
+
+        // Retrieve the service bean
+        MyServiceClass myService = context.getBean(MyServiceClass.class);
+
+        // Call the method
+        myService.myMethod();
+
+        // Close the context
+        context.close();
+    }
+}
 
 
 
