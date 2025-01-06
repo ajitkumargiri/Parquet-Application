@@ -1,4 +1,38 @@
 ```code
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Main {
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
+    public static void main(String[] args) {
+        try {
+            logger.info("Initializing Spring Context...");
+            ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+            logger.info("Spring Context initialized successfully!");
+
+            // Log all bean names
+            String[] beanNames = context.getBeanDefinitionNames();
+            logger.info("Beans loaded by Spring Context:");
+            for (String beanName : beanNames) {
+                logger.info(" - " + beanName);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to initialize Spring Context", e);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 Here’s a detailed guide with the complete file structure and steps for using your Spring-enabled Java library in Databricks or a Non-Spring application. This includes building the library, configuring the project, and invoking it from Databricks.
 
 1. Java Library Structure
