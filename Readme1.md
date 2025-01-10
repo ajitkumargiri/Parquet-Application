@@ -1,4 +1,53 @@
 ```code
+# Import necessary libraries
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.types import IntegerType, StructType, StructField
+
+# Create a SparkSession (Databricks automatically provides this in notebooks)
+spark = SparkSession.builder.appName("ParallelRowProcessing").getOrCreate()
+
+# Step 1: Read the Parquet file
+# Replace 'path/to/your/parquet_file' with the path to your file
+parquet_file_path = "path/to/your/parquet_file"
+
+# Sample schema (adjust based on your Parquet file structure)
+schema = StructType([
+    StructField("id", IntegerType(), True),
+    StructField("value", IntegerType(), True)
+])
+
+# Read the Parquet file
+df = spark.read.schema(schema).parquet(parquet_file_path)
+
+# Show the first few rows (optional)
+df.show()
+
+# Step 2: Define a function to process each row
+# This function multiplies the "value" column by 2 as an example
+@pandas_udf(IntegerType())
+def process_row_udf(column_value):
+    # Perform custom processing
+    return column_value * 2
+
+# Step 3: Apply the UDF to the DataFrame
+result_df = df.withColumn("processed_value", process_row_udf(df["value"]))
+
+# Show the result DataFrame
+result_df.show()
+
+# Step 4: Save the processed DataFrame to an output file
+output_path = "path/to/your/output_folder"
+result_df.write.mode("overwrite").parquet(output_path)
+
+print(f"Processed data has been saved to: {output_path}")
+
+# Stop the SparkSession (if running locally)
+spark.stop()
+
+
+
+
 Chat history
 Open sidebar
 
