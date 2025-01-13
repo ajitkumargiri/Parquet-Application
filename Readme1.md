@@ -1,4 +1,126 @@
 ```code
+# Step 1: Import necessary libraries
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType
+
+# Step 2: Create a SparkSession and load the Java library
+spark = SparkSession.builder \
+    .appName("JavaTransformation") \
+    .config("spark.jars", "/path/to/your/library.jar") \  # Path to your Java .jar file
+    .getOrCreate()
+
+# Step 3: Read the input file (e.g., Parquet)
+input_path = "path/to/your/input_file.parquet"  # Replace with the input file path
+df = spark.read.parquet(input_path)
+
+# Show input DataFrame schema and data (optional)
+df.printSchema()
+df.show()
+
+# Step 4: Broadcast the Java class
+# Initialize the Java class on the driver
+java_class = spark._jvm.com.example.YourTransformationClass()
+# Broadcast it to all worker nodes
+broadcast_java_class = spark.sparkContext.broadcast(java_class)
+
+# Step 5: Define a function to call the Java transformation method
+def transform_row(row):
+    # Use the broadcasted Java class to call the transformation method
+    transformed_data = broadcast_java_class.value.transform(row.asDict())  # Call your Java method
+    return transformed_data  # Return the transformed result
+
+# Step 6: Apply the transformation method to each row in parallel
+transformed_rdd = df.rdd.map(transform_row)  # Use RDD map to transform rows in parallel
+
+# Step 7: Convert the transformed RDD back to a DataFrame
+# Define the schema for the transformed data
+schema = StructType([
+    StructField("transformed_field", StringType(), True)  # Adjust schema based on output
+])
+transformed_df = spark.createDataFrame(transformed_rdd, schema=schema)
+
+# Show transformed DataFrame (optional)
+transformed_df.show()
+
+# Step 8: Save the transformed data to an output file
+output_path = "path/to/your/output_file.parquet"  # Replace with the output file path
+transformed_df.write.mode("overwrite").parquet(output_path)
+
+print(f"Transformed data has been saved to: {output_path}")
+
+# Stop the SparkSession (optional)
+spark.stop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Step 1: Import necessary libraries
+from pyspark.sql import SparkSession
+
+# Step 2: Create a SparkSession and load the Java library
+spark = SparkSession.builder \
+    .appName("JavaTransformation") \
+    .config("spark.jars", "/path/to/your/library.jar") \  # Path to your Java .jar/.kar file
+    .getOrCreate()
+
+# Step 3: Read the input file (e.g., Parquet)
+input_path = "path/to/your/input_file.parquet"  # Replace with the input file path
+df = spark.read.parquet(input_path)
+
+# Show input DataFrame schema and data (optional)
+df.printSchema()
+df.show()
+
+# Step 4: Define a function to call the Java transformation method
+def transform_row(row):
+    # Access the Java class and method through PySpark's JavaGateway
+    java_class = spark._jvm.com.example.YourTransformationClass()  # Replace with your Java class
+    transformed_data = java_class.transform(row.asDict())  # Call your Java method
+    return transformed_data  # Return the transformed result
+
+# Step 5: Apply the transformation method to each row in parallel
+transformed_rdd = df.rdd.map(transform_row)  # Use RDD map to transform rows in parallel
+
+# Step 6: Convert the transformed RDD back to a DataFrame
+# Ensure the schema matches the transformed data's structure
+from pyspark.sql.types import StructType, StructField, StringType
+schema = StructType([
+    StructField("transformed_field", StringType(), True)  # Adjust schema based on output
+])
+transformed_df = spark.createDataFrame(transformed_rdd, schema=schema)
+
+# Show transformed DataFrame (optional)
+transformed_df.show()
+
+# Step 7: Save the transformed data to an output file
+output_path = "path/to/your/output_file.parquet"  # Replace with the output file path
+transformed_df.write.mode("overwrite").parquet(output_path)
+
+print(f"Transformed data has been saved to: {output_path}")
+
+# Stop the SparkSession (optional)
+spark.stop()
+
+
+
+
+
+
+
+
+
+
+
 # Import necessary libraries
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import pandas_udf
