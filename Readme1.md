@@ -1,4 +1,69 @@
 ```code
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoder;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.SparkSession;
+import com.example.transformation.EmployeeTransformer;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public class DatabricksSparkTransformationJob {
+    public static void main(String[] args) {
+        // Step 1: Initialize SparkSession
+        SparkSession spark = SparkSession.builder()
+                .appName("User to Employee Transformation Using Spring Library")
+                .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+                .getOrCreate();
+
+        // Step 2: Define encoders for User and Employee
+        Encoder<User> userEncoder = Encoders.bean(User.class);
+        Encoder<Employee> employeeEncoder = Encoders.bean(Employee.class);
+
+        // Step 3: Load the Parquet file into a Dataset<User>
+        Dataset<User> userDataset = spark.read()
+                .parquet("path/to/user_data.parquet")  // Replace with your Parquet file path
+                .as(userEncoder);
+
+        // Step 4: Repartition dataset for better parallelism (optional)
+        userDataset = userDataset.repartition(10); // Adjust based on cluster size
+
+        // Step 5: Apply the transformation using mapPartitions for distributed processing
+        Dataset<Employee> employeeDataset = userDataset.mapPartitions((Iterator<User> users) -> {
+            List<Employee> employees = new ArrayList<>();
+            while (users.hasNext()) {
+                User user = users.next();
+                // Call the Spring-based method for transformation
+                Employee employee = EmployeeTransformer.transformEmployee(user);
+                employees.add(employee);
+            }
+            return employees.iterator();
+        }, employeeEncoder);
+
+        // Step 6: Show the transformed employees
+        employeeDataset.show(false);
+
+        // Step 7: Optionally, write the result back to a Parquet file
+        employeeDataset.write()
+                .mode("overwrite")
+                .parquet("path/to/employee_data.parquet");  // Replace with your output path
+
+        // Step 8: Stop the Spark session
+        spark.stop();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 # Step 1: Import necessary libraries
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType
