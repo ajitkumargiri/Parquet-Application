@@ -1,4 +1,44 @@
 ```code
+import org.apache.spark.sql.{Dataset, Encoder, Encoders, SparkSession}
+import com.example.transformation.Employee // Assuming Employee class is in the library
+import com.example.models.User            // User class from the library
+
+// Step 1: Initialize SparkSession
+val spark = SparkSession.builder()
+  .appName("TransformationJob")
+  .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+  .getOrCreate()
+
+// Step 2: Define Encoders for User and TransformedEmployee
+implicit val userEncoder: Encoder[User] = Encoders.bean(classOf[User]) // Use library's User class
+implicit val transformedEmployeeEncoder: Encoder[TransformedEmployee] = Encoders.product[TransformedEmployee]
+
+// Step 3: Read Parquet File into Dataset[User]
+val dataset: Dataset[User] = spark.read.parquet("path/to/parquet").as[User]
+
+// Step 4: Apply Transformation Logic
+val transformedDataset: Dataset[TransformedEmployee] = dataset.map(user => {
+  val transformed = Employee.transformEmployee(user) // Call library method
+  TransformedEmployee(user.getField1, transformed.getResult) // Map to TransformedEmployee
+})
+
+// Step 5: Write Transformed Dataset to Parquet
+transformedDataset.write
+  .mode("overwrite")
+  .parquet("path/to/output/parquet")
+
+
+
+
+
+
+
+
+
+
+
+
+
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
