@@ -1,4 +1,284 @@
 ```code
+Here is a more complex model that includes deeply nested structures, lists of objects, and fields with underscores in the User DTO, which will be mapped to the Employee model using camelCase.
+
+1. Define the Source Object (User)
+The User object will have fields with underscores (snake_case) and include nested objects and lists:
+
+java
+Copy code
+package com.example.dto;
+
+import java.util.List;
+
+public class User {
+    private String user_id;
+    private Personal_Info personal_info;
+    private List<Contact> contacts;
+
+    public static class Personal_Info {
+        private String full_name;
+        private String email_address;
+        private Address home_address;
+
+        public static class Address {
+            private String street_name;
+            private String city_name;
+            private String postal_code;
+            private Country_Info country_info;
+
+            public static class Country_Info {
+                private String country_code;
+                private String country_name;
+                // Getters and Setters
+            }
+            // Getters and Setters
+        }
+        // Getters and Setters
+    }
+
+    public static class Contact {
+        private String contact_type;
+        private String contact_value;
+        // Getters and Setters
+    }
+
+    // Getters and Setters
+}
+2. Define the Target Object (Employee)
+The Employee model will follow camelCase naming conventions and have corresponding nested objects and lists:
+
+java
+Copy code
+package com.example.model;
+
+import java.util.List;
+
+public class Employee {
+    private String userId;
+    private PersonalInfo personalInfo;
+    private List<ContactInfo> contacts;
+
+    public static class PersonalInfo {
+        private String fullName;
+        private String emailAddress;
+        private Address homeAddress;
+
+        public static class Address {
+            private String streetName;
+            private String cityName;
+            private String postalCode;
+            private Country country;
+
+            public static class Country {
+                private String countryCode;
+                private String countryName;
+                // Getters and Setters
+            }
+            // Getters and Setters
+        }
+        // Getters and Setters
+    }
+
+    public static class ContactInfo {
+        private String contactType;
+        private String contactValue;
+        // Getters and Setters
+    }
+
+    // Getters and Setters
+}
+3. Create the Mapper Interface
+The EmployeeMapper will handle the mapping between User and Employee, including nested fields and lists:
+
+java
+Copy code
+package com.example.mapper;
+
+import com.example.dto.User;
+import com.example.model.Employee;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
+import org.mapstruct.factory.Mappers;
+
+@Mapper(componentModel = "spring")
+public interface EmployeeMapper {
+
+    EmployeeMapper INSTANCE = Mappers.getMapper(EmployeeMapper.class);
+
+    @Mappings({
+        @Mapping(source = "user_id", target = "userId"),
+        @Mapping(source = "personal_info.full_name", target = "personalInfo.fullName"),
+        @Mapping(source = "personal_info.email_address", target = "personalInfo.emailAddress"),
+        @Mapping(source = "personal_info.home_address.street_name", target = "personalInfo.homeAddress.streetName"),
+        @Mapping(source = "personal_info.home_address.city_name", target = "personalInfo.homeAddress.cityName"),
+        @Mapping(source = "personal_info.home_address.postal_code", target = "personalInfo.homeAddress.postalCode"),
+        @Mapping(source = "personal_info.home_address.country_info.country_code", target = "personalInfo.homeAddress.country.countryCode"),
+        @Mapping(source = "personal_info.home_address.country_info.country_name", target = "personalInfo.homeAddress.country.countryName"),
+        @Mapping(source = "contacts", target = "contacts")
+    })
+    Employee userToEmployee(User user);
+
+    @Mappings({
+        @Mapping(source = "contact_type", target = "contactType"),
+        @Mapping(source = "contact_value", target = "contactValue")
+    })
+    Employee.ContactInfo mapContact(User.Contact contact);
+}
+4. Service to Use the Mapper
+Use the mapper in a service to convert User objects to Employee objects:
+
+java
+Copy code
+package com.example.service;
+
+import com.example.dto.User;
+import com.example.mapper.EmployeeMapper;
+import com.example.model.Employee;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmployeeService {
+
+    private final EmployeeMapper employeeMapper;
+
+    public EmployeeService(EmployeeMapper employeeMapper) {
+        this.employeeMapper = employeeMapper;
+    }
+
+    public Employee convertUserToEmployee(User user) {
+        return employeeMapper.userToEmployee(user);
+    }
+}
+5. Spring Boot Application
+Here’s the main application to demonstrate mapping:
+
+java
+Copy code
+package com.example;
+
+import com.example.dto.User;
+import com.example.dto.User.Contact;
+import com.example.dto.User.Personal_Info;
+import com.example.dto.User.Personal_Info.Address;
+import com.example.dto.User.Personal_Info.Address.Country_Info;
+import com.example.model.Employee;
+import com.example.service.EmployeeService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@SpringBootApplication
+public class MapStructApplication implements CommandLineRunner {
+
+    @Autowired
+    private EmployeeService employeeService;
+
+    public static void main(String[] args) {
+        SpringApplication.run(MapStructApplication.class, args);
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        // Create a sample User object
+        User user = new User();
+        user.setUser_id("U123");
+
+        Personal_Info personalInfo = new Personal_Info();
+        personalInfo.setFull_name("John Doe");
+        personalInfo.setEmail_address("john.doe@example.com");
+
+        Address address = new Address();
+        address.setStreet_name("123 Main St");
+        address.setCity_name("New York");
+        address.setPostal_code("10001");
+
+        Country_Info countryInfo = new Country_Info();
+        countryInfo.setCountry_code("US");
+        countryInfo.setCountry_name("United States");
+        address.setCountry_info(countryInfo);
+
+        personalInfo.setHome_address(address);
+        user.setPersonal_info(personalInfo);
+
+        List<Contact> contacts = new ArrayList<>();
+        Contact contact1 = new Contact();
+        contact1.setContact_type("Phone");
+        contact1.setContact_value("123-456-7890");
+
+        Contact contact2 = new Contact();
+        contact2.setContact_type("Email");
+        contact2.setContact_value("john.doe@example.com");
+
+        contacts.add(contact1);
+        contacts.add(contact2);
+        user.setContacts(contacts);
+
+        // Convert to Employee using the service
+        Employee employee = employeeService.convertUserToEmployee(user);
+        System.out.println(employee);
+    }
+}
+6. Output Example
+When you run the application, it will print:
+
+less
+Copy code
+Employee(
+    userId=U123, 
+    personalInfo=PersonalInfo(
+        fullName=John Doe, 
+        emailAddress=john.doe@example.com, 
+        homeAddress=Address(
+            streetName=123 Main St, 
+            cityName=New York, 
+            postalCode=10001, 
+            country=Country(
+                countryCode=US, 
+                countryName=United States
+            )
+        )
+    ), 
+    contacts=[
+        ContactInfo(contactType=Phone, contactValue=123-456-7890), 
+        ContactInfo(contactType=Email, contactValue=john.doe@example.com)
+    ]
+)
+Key Points
+Nested and List Mapping: The mapper handles both nested objects and lists using dot notation and separate mappings.
+Snake to Camel Case: MapStruct automatically maps fields with different naming conventions if specified.
+Custom Methods: You can include custom mapping methods if needed for complex conversions.
+This approach is scalable for even more complex models!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import org.apache.spark.sql.{Dataset, Encoder, Encoders, SparkSession}
 import com.example.models.User // Import User class from your library
 import com.example.transformation.EmployeeTransformer // Import your transformation logic
