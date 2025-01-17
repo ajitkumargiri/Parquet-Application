@@ -1,5 +1,54 @@
 ```code
 import org.apache.spark.sql.{Dataset, Encoder, Encoders, SparkSession}
+import com.example.models.User // Import User class from your library
+import com.example.transformation.EmployeeTransformer // Import your transformation logic
+
+// Define a case class for the transformed Employee (if needed)
+case class TransformedEmployee(field1: String, result: String)
+
+object SparkTransformationJob {
+  def main(args: Array[String]): Unit = {
+    // Step 1: Initialize SparkSession
+    val spark = SparkSession.builder()
+      .appName("User to Employee Transformation")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .getOrCreate()
+
+    // Step 2: Define Encoders
+    implicit val userEncoder: Encoder[User] = Encoders.bean(classOf[User]) // For Java beans
+    implicit val transformedEmployeeEncoder: Encoder[TransformedEmployee] = Encoders.product[TransformedEmployee] // For case classes
+
+    // Step 3: Read the Parquet file into a Dataset[User]
+    val userDataset: Dataset[User] = spark.read.parquet("path/to/user_data.parquet").as[User]
+
+    // Step 4: Apply the transformation
+    val transformedDataset: Dataset[TransformedEmployee] = userDataset.map(user => {
+      val employee = EmployeeTransformer.transformEmployee(user) // Call the transformation
+      TransformedEmployee(user.getField1, employee.getResult)    // Map to a case class
+    })
+
+    // Step 5: Write the transformed data back to Parquet
+    transformedDataset.write
+      .mode("overwrite")
+      .parquet("path/to/output/employee_data.parquet")
+
+    // Stop SparkSession
+    spark.stop()
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+import org.apache.spark.sql.{Dataset, Encoder, Encoders, SparkSession}
 import com.example.transformation.Employee // Assuming Employee class is in the library
 import com.example.models.User            // User class from the library
 
