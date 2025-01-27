@@ -1,4 +1,41 @@
 ```code
+sequenceDiagram
+    participant ADF as Azure Data Factory
+    participant DBX as Databricks Notebook
+    participant STG as Azure Storage Account
+    participant CB as COBOL Parser Notebook
+    participant TR as Transformation Rule Java Library
+    participant BR as Business Rule Java Library
+    participant SQL as SQL Server
+    participant COSMOS as Cosmos DB
+
+    ADF->>STG: Copy COBOL and Copybook Files
+    ADF->>STG: Copy BU File (from External Storage)
+    ADF->>DBX: Trigger Main Notebook with File Details (JSON)
+    DBX->>CB: Call COBOL to Parquet Notebook (Per File)
+    CB->>STG: Write Parquet Files to Storage
+    DBX->>STG: Read Parquet Files
+    DBX->>DBX: Join Parquet Files (Unified User File)
+    DBX->>TR: Call Transformation Rules for Each Record
+    TR-->>DBX: Transformed Employee Models
+    DBX->>BR: Execute Business Rules on Transformed Data
+    BR-->>DBX: Updated Data (with Derived Fields)
+    DBX->>BR: Check for Relationship Changes
+    BR-->>DBX: Re-execute Rules for Affected Employees
+    DBX->>SQL: Write Relationship, Manager, Role Data
+    DBX->>COSMOS: Write Employee and Other Models
+    DBX-->>ADF: Notify Process Completion
+
+
+
+
+
+
+
+
+
+
+
 Chat history
 Open sidebar
 
