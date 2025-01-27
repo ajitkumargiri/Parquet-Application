@@ -1,6 +1,43 @@
 ```code
 sequenceDiagram
     participant ADF as Azure Data Factory
+    participant Databricks as Databricks Notebook
+    participant Parquet as Parquet File
+    participant DeltaLake as Delta Lake
+    participant JavaLib as Java Library
+    participant DB as Database (SQL Server/CosmosDB)
+    
+    ADF->>Databricks: Trigger Notebook with File Path JSON
+    Databricks->>Parquet: Read 12 Million Records
+    Parquet-->>Databricks: Return Data as DataFrame
+    Databricks->>JavaLib: Call executeTransformationRules(data)
+    JavaLib-->>Databricks: Return Transformed Data
+    Databricks->>JavaLib: Call executeBusinessRules(transformedData)
+    JavaLib-->>Databricks: Return Data with Business Rules Applied
+    Databricks->>JavaLib: Call applyInverseRelationships(businessData)
+    JavaLib-->>Databricks: Return Data with Inverse Relationships Applied
+    Databricks->>DeltaLake: Write Final Data to Delta Lake (Overwrite/Upsert)
+    DeltaLake-->>Databricks: Acknowledgment
+    Databricks->>DB: Store Derived Data into DB (Employee, Relationships, etc.)
+    DB-->>Databricks: Acknowledgment
+    Databricks->>ADF: Notify Completion with Status
+
+    Note over Databricks,Parquet: Parallelize the Data Processing for Performance
+    Note over Databricks,DeltaLake: Use Delta Lake for Incremental Writes and Versioning
+    Note over JavaLib,Databricks: Log Transformation/Business Rule Errors for Debugging
+
+
+
+
+
+
+
+
+
+
+
+sequenceDiagram
+    participant ADF as Azure Data Factory
     participant DBX as Databricks Notebook
     participant STG as Azure Storage Account
     participant CB as COBOL Parser Notebook
