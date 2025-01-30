@@ -1,4 +1,22 @@
 ```code
+# Path to the Parquet file or directory
+parquet_path = "/mnt/<mount-name>/<path-to-parquet-file-or-directory>"
+
+# Load the Parquet file(s) into a DataFrame
+df = spark.read.parquet(parquet_path)
+
+# Get the size of the DataFrame in bytes
+total_size = df.inputFiles().map(lambda f: dbutils.fs.ls(f)[0].size).sum()
+
+# Convert size to a human-readable format (e.g., GB)
+total_size_gb = total_size / (1024 ** 3)
+print(f"Total size of Parquet file(s) in '{parquet_path}': {total_size_gb:.2f} GB")
+
+
+
+
+
+
 # Define the mount point path
 mount_point = "/mnt/<mount-name>"
 
