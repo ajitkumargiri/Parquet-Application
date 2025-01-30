@@ -1,4 +1,37 @@
 ```code
+# Define the mount point path
+mount_point = "/mnt/<mount-name>"
+
+# Initialize total size
+total_size = 0
+
+# Function to recursively list files and calculate size
+def calculate_folder_size(path):
+    global total_size
+    try:
+        for file_info in dbutils.fs.ls(path):
+            if file_info.isDir():  # If it's a directory, recurse
+                calculate_folder_size(file_info.path)
+            else:  # If it's a file, add its size
+                total_size += file_info.size
+    except Exception as e:
+        print(f"Error accessing path {path}: {e}")
+
+# Calculate the size of the mounted folder
+calculate_folder_size(mount_point)
+
+# Convert size to a human-readable format (e.g., GB)
+total_size_gb = total_size / (1024 ** 3)
+print(f"Total size of mounted folder '{mount_point}': {total_size_gb:.2f} GB")
+
+
+
+
+
+
+
+
+
 sequenceDiagram
     participant ADF as Azure Data Factory
     participant Databricks as Databricks Notebook
