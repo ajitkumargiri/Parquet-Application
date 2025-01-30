@@ -1,4 +1,32 @@
 ```code
+from pyspark.sql import SparkSession
+
+# Create Spark session (Databricks already has Spark running)
+spark = SparkSession.builder.appName("FilterParquet").getOrCreate()
+
+# Define the input and output paths
+parquet_file_path = "dbfs:/mnt/data/input.parquet"  # Replace with your actual path
+json_output_path = "dbfs:/mnt/data/output.json"
+
+# Load Parquet file
+df = spark.read.parquet(parquet_file_path)
+
+# Define the list of IDs to filter
+id_list = [101, 202, 303]  # Replace with actual IDs
+
+# Filter data where id is in the given list
+filtered_df = df.filter(df.id.isin(id_list))
+
+# Save as JSON
+filtered_df.write.mode("overwrite").json(json_output_path)
+
+print("Filtered data saved as JSON at:", json_output_path)
+
+
+
+
+
+
 # Path to the Parquet file or directory
 parquet_path = "/mnt/<mount-name>/<path-to-parquet-file-or-directory>"
 
