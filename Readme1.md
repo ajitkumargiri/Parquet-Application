@@ -1,4 +1,18 @@
 ```code
+Assume we have user record 12 millions in a parquet file.
+we need to read one by one the execute transformation rule by calling a existing java lib jar from databricks.
+it will return Transformed Employee model (manager, list of relationship,list of address)
+then need to execute business rule by passing Employee model.
+but we need all the relationship toEmp and fromEmp and add related manager as well.
+then it will return Employee model again.
+then execute business rule for 
+
+
+
+
+
+
+
 PowerPoint (PPT) Outline: Mainframe to Parquet Conversion Template Notebook
 
 This PPT will describe the template-driven notebook approach that dynamically takes file details as JSON and runs the Databricks notebook to convert mainframe COBOL files to Parquet for further processing.
