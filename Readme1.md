@@ -1,4 +1,354 @@
 ```code
+PowerPoint (PPT) Outline: Mainframe to Parquet Conversion Template Notebook
+
+This PPT will describe the template-driven notebook approach that dynamically takes file details as JSON and runs the Databricks notebook to convert mainframe COBOL files to Parquet for further processing.
+
+
+---
+
+Slide 1: Title Slide
+
+Title: Mainframe to Parquet – Dynamic & Scalable Conversion Notebook
+Subtitle: Automating Mainframe Data Processing with JSON-driven Databricks
+Presented by: [Your Name] | [Date]
+
+
+---
+
+Slide 2: Agenda
+
+1. Introduction – Why Mainframe to Parquet?
+
+
+2. Challenges in Mainframe Data Processing
+
+
+3. Solution Overview – JSON-Driven Template Notebook
+
+
+4. Pipeline Flow & Architecture
+
+
+5. Databricks Notebook Execution (Dynamic JSON Handling)
+
+
+6. Parallel Processing & Optimization
+
+
+7. Exception Handling & Error Logging
+
+
+8. Business Benefits & Reusability
+
+
+9. Conclusion & Next Steps
+
+
+
+
+---
+
+Slide 3: Introduction – Why Mainframe to Parquet?
+
+Traditional Challenges of Mainframe Data
+
+COBOL files require copybooks for schema definition.
+
+Large dataset (~12M+ records).
+
+Complex transformations needed before analytics.
+
+
+Why Parquet?
+
+Columnar storage for faster queries.
+
+Compression reduces storage cost.
+
+Efficient data processing with Spark.
+
+
+Goal:
+
+Automate COBOL-to-Parquet conversion dynamically using Databricks & JSON-driven execution.
+
+
+
+
+---
+
+Slide 4: Challenges in Mainframe Data Processing
+
+Hardcoded File Processing – Requires manual updates for new files.
+
+Scalability Issues – Large files (~200GB compressed) take longer to process.
+
+Error Handling Complexity – COBOL file structure errors cause failures.
+
+Processing Time – Sequential execution delays analytics.
+
+
+
+---
+
+Slide 5: Solution Overview – JSON-Driven Template Notebook
+
+Approach:
+
+Single Databricks notebook template that dynamically processes any COBOL file.
+
+JSON-based configuration to specify input files & schema details.
+
+Parallel execution of multiple files for performance.
+
+
+Key Benefits:
+
+No hardcoding – New files can be added via JSON input.
+
+Dynamic schema mapping – Reads copybook definitions automatically.
+
+Scalable & reusable across teams.
+
+
+
+
+---
+
+Slide 6: Pipeline Flow & Architecture
+
+Diagram: End-to-end pipeline
+
+Azure Data Factory (ADF):
+
+Orchestrates execution & passes JSON input to Databricks.
+
+
+Databricks Notebook:
+
+Reads file metadata from JSON.
+
+Processes COBOL file using copybook schema.
+
+Converts to Parquet format & stores in Azure Storage.
+
+
+Delta Lake (Optional):
+
+Supports incremental updates to avoid reprocessing full data.
+
+
+
+
+---
+
+Slide 7: JSON Configuration – Dynamic Processing
+
+JSON Input Example:
+
+{
+  "files": [
+    {
+      "fileName": "user_data",
+      "copybook": "user.cbk",
+      "sourcePath": "/mnt/mainframe/input/",
+      "destinationPath": "/mnt/mainframe/parquet/",
+      "partitionColumn": "userId"
+    },
+    {
+      "fileName": "order_data",
+      "copybook": "order.cbk",
+      "sourcePath": "/mnt/mainframe/input/",
+      "destinationPath": "/mnt/mainframe/parquet/",
+      "partitionColumn": "orderId"
+    }
+  ]
+}
+
+Dynamic Parameters:
+
+fileName – Name of COBOL file.
+
+copybook – Schema definition file.
+
+sourcePath – Input storage location.
+
+destinationPath – Output location.
+
+partitionColumn – For optimized querying.
+
+
+
+
+---
+
+Slide 8: Databricks Notebook Execution – JSON Handling
+
+Code Snippet: Read JSON & Process Files
+
+import json
+from pyspark.sql import SparkSession
+
+# Read JSON input from ADF
+dbutils.widgets.text("input_json", "{}")
+input_json = json.loads(dbutils.widgets.get("input_json"))
+
+# Process each file dynamically
+for file in input_json["files"]:
+    file_name = file["fileName"]
+    copybook_path = file["copybook"]
+    source_path = file["sourcePath"]
+    destination_path = file["destinationPath"]
+    partition_col = file["partitionColumn"]
+
+    # Convert COBOL to Parquet
+    df = spark.read.format("cobol") \
+        .option("copybook", copybook_path) \
+        .load(source_path + file_name)
+    
+    # Save as Parquet
+    df.write.mode("overwrite").partitionBy(partition_col).parquet(destination_path + file_name)
+
+Key Highlights:
+
+Uses dbutils.widgets to receive JSON input from ADF.
+
+Iterates over all files dynamically – no hardcoded file names.
+
+Converts COBOL → Parquet and partitions by userId or orderId.
+
+
+
+
+---
+
+Slide 9: Parallel Processing & Optimization
+
+Databricks Parallelism Strategy:
+
+Uses Spark Clusters for distributed processing.
+
+Auto-scaling enabled to dynamically allocate resources.
+
+Partitioning strategy to speed up file writes.
+
+
+Performance Gains:
+
+Sequential Processing: ~2+ hours.
+
+Parallel Processing: ~45 minutes (~3x faster).
+
+
+
+
+---
+
+Slide 10: Exception Handling & Error Logging
+
+Error Scenarios:
+
+Missing copybook file.
+
+Corrupt COBOL records.
+
+Schema mismatch.
+
+
+Exception Handling Mechanism:
+
+Logs errors to Azure Monitor.
+
+Skips invalid records instead of failing full batch.
+
+Saves failed records to error storage for debugging.
+
+
+Code Snippet:
+
+try:
+    df = spark.read.format("cobol").option("copybook", copybook_path).load(source_path + file_name)
+except Exception as e:
+    print(f"Error processing {file_name}: {str(e)}")
+    spark.createDataFrame([(file_name, str(e))], ["file", "error"]).write.mode("append").json("/mnt/errors/logs.json")
+
+
+
+---
+
+Slide 11: Business Benefits & Reusability
+
+For Data Engineers:
+
+One-time setup, reusable for all teams.
+
+No hardcoding, fully dynamic processing.
+
+
+For Business Teams:
+
+Faster availability of mainframe data.
+
+Optimized query performance in Parquet format.
+
+
+For IT Teams:
+
+Low maintenance, automated error handling.
+
+
+
+
+---
+
+Slide 12: Conclusion & Next Steps
+
+Key Takeaways:
+
+Automated & scalable COBOL-to-Parquet conversion.
+
+JSON-based dynamic file handling – No code changes required.
+
+Parallel processing improves speed significantly.
+
+
+Next Steps:
+
+Integrate Delta Lake for incremental updates.
+
+Optimize Databricks cost & resource allocation.
+
+Implement real-time monitoring & alerting.
+
+
+
+
+---
+
+Additional Notes:
+
+Slide 6: Add an architecture diagram.
+
+Slide 9: Include a Databricks cluster performance chart.
+
+Slide 10: Show error logging strategy visually.
+
+
+
+---
+
+Would you like me to create a ready-to-use PPT file based on this outline?
+
+
+
+
+
+
+
+
+
+
+
 from pyspark.sql import SparkSession
 
 # Create Spark session (Databricks already has Spark running)
