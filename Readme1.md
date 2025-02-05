@@ -1,4 +1,16 @@
 ```code
+To ensure we are not disturbing anyone, we have taken multiple steps to reduce noise. We have placed a carpet in our child’s play area, restricted her playtime, and even changed our daily habits to avoid any potential disturbances. The police officers who visited our home have seen and acknowledged our efforts. They even observed and described the toys our baby plays with, confirming that they are typical children’s toys and not a source of excessive noise.
+
+Additionally, on February 3rd, we received a complaint about furniture noise. When the police visited, they inspected our home and saw that we have only two wooden pieces of furniture. They also noted that all our furniture is placed in a way that minimizes sound transmission—most are positioned opposite to the shared wall, and the other is in a location where it would produce very little noise.
+
+During their visit, we also mentioned our upcoming birthday celebration on February 7th. The officers reassured us that we have every right to celebrate and encouraged us to do so. However, due to the ongoing situation, we feel hesitant to invite our friends or celebrate freely, fearing another complaint.
+
+
+
+
+
+
+
 Subject: Ongoing Issues with Neighbor’s Complaints – Prinses Christinalaan 94, Uithoorn
 
 Dear Sir/Madam,
