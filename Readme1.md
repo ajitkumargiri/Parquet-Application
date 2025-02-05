@@ -1,6 +1,32 @@
 ```code
 
 
+Subject: Formal Complaint Regarding Harassment by Neighbor at Prinses Christinalaan 94, Uithoorn
+
+Dear Sir/Madam,
+
+We are writing to formally complain about the continuous harassment and mental stress caused by our neighbor at Prinses Christinalaan 94, Uithoorn.
+
+We moved to Prinses Christinalaan 96 in July 2024, and from the third day, our neighbor has been constantly complaining about noise from our house. She complains about even the smallest sounds, like when something drops on the floor. We do not have loud parties at night, we do not play loud music, and we do not make continuous disturbances. However, despite living a normal family life, we are constantly targeted with complaints.
+
+The construction of the house is old, and naturally, some level of noise travels between homes. We also hear sounds from our neighbor’s house, but we understand that this is part of living in such a building. When their grandchildren visit, we hear them playing, running, and making noise, but for us, it is a happy sound because children playing is natural. Unfortunately, this same understanding is not given to us when our little child makes even the slightest noise.
+
+We have a 1-year-4-month-old baby girl. Like any child, she plays, and sometimes her toys fall on the floor. To reduce any disturbance, we have put a carpet in her play area and try to control her as much as possible. We have even restricted her natural play, forcing her to stay on the couch or bed most of the time. As parents, we feel terrible because we know that keeping her in front of the TV for long hours is bad parenting, but we are left with no choice due to fear of more complaints.
+
+Despite all our efforts, our neighbor continues to harass us. She even gave us a letter threatening to call the police if she hears any noise. The police already visited our home, which has left us extremely stressed. However, when they checked with our other neighbor, they confirmed that they do not hear any noise from our house. This shows that her complaints are unreasonable and meant only to disturb our peace.
+
+This situation is severely affecting our mental health. We are unable to concentrate on our daily lives, constantly worrying about when the next complaint will come. We feel like we are being watched all the time. The stress and fear of living in our own home are impacting our well-being.
+
+We are simply a family trying to live peacefully. We are not disturbing anyone intentionally, and we have already taken many steps to reduce noise. However, it feels like we are being unfairly targeted. We kindly request you to take action against this behavior and provide us with a solution so we can live in our home without fear and stress.
+
+Thank you for your time and consideration.
+
+Sincerely,
+[Your Name]
+[Your Contact Information]
+[Your Address]
+
+
 
 We are simply a family trying to live peacefully and have made every effort to minimize any noise. The police officers have seen and acknowledged our efforts. Despite this, we feel unfairly targeted with continuous complaints.
 
